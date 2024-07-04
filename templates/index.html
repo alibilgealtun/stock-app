@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="../static/styles.css">
+    <title>Stok Sayım Uygulaması</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</head>
+<body>
+    <h1>Stok Listesi</h1>
+
+    <input type="text" id="searchInput" placeholder="Ara...">
+    <button onclick="searchTable()">Ara</button>
+
+    <table border="1" id="stokTable">
+        <tr>
+            <th>OLİMPİA KOD</th>
+            <th>STOK ADI</th>
+            <th>ÜY</th>
+            <th>KONUM</th>
+            <th>MODEL</th>
+            <th>ÖZELLİK</th>
+            <th>DELİK</th>
+            <th>MM</th>
+            <th>EBAT</th>
+            <th>BEYAZ</th>
+            <th>RENKLİ</th>
+            <th>ÇİFT RENK</th>
+            <th>K.YEŞİL K.GRİ</th>
+        </tr>
+        {% for stok in stoklar %}
+        <tr>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD'] }}" data-field="OLİMPİA_KOD">{% if stok['OLİMPİA_KOD'] is not none %}{{ stok['OLİMPİA_KOD'] }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="STOK_ADİ">{% if stok['STOK_ADİ'] is not none %}{{ stok['STOK_ADİ'] }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="ÜY">{% if stok['ÜY'] is not none %}{{ stok['ÜY'] }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD'] }}" data-field="KONUM">{% if stok['KONUM'] is not none %}{{ stok['KONUM'] }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="MODEL">{% if stok['MODEL'] is not none %}{{ stok['MODEL'] }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD'] }}" data-field="ÖZELLİK">{% if stok['ÖZELLİK'] is not none %}{{ stok['ÖZELLİK'] }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="DELİK">{% if stok['DELİK'] is not none %}{{ stok['DELİK'] }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="MM">{% if stok['MM'] is not none %}{{ stok['MM'] }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="EBAT">{% if stok['EBAT'] is not none %}  {{ stok['EBAT'] }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="BEYAZ">{% if stok['BEYAZ'] is not none %}{{"%.2f"|format(stok['BEYAZ']) }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="RENKLİ">{% if stok['RENKLİ'] is not none %}{{ "%.2f"|format(stok['RENKLİ']) }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="CIFT_RENK">{% if stok['CIFT_RENK'] is not none %}{{ "%.2f"|format(stok['CIFT_RENK']) }}{% endif %}</td>
+            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="KYESİL_KGRİ">{% if stok['KYESİL_KGRİ'] is not none %}{{ "%.2f"|format(stok['KYESİL_KGRİ']) }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <script src="../static/script.js"></script>
+</body>
+</html>
