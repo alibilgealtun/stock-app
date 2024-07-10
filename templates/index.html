@@ -16,7 +16,8 @@
 
     <table border="1" id="stokTable">
         <tr>
-            <th>OLİMPİA KOD</th>
+            <th>İşlem</th>
+            <th>OLIMPIA KOD</th>
             <th>STOK ADI</th>
             <th>ÜY</th>
             <th>KONUM</th>
@@ -25,29 +26,42 @@
             <th>DELİK</th>
             <th>MM</th>
             <th>EBAT</th>
-            <th>BEYAZ</th>
-            <th>RENKLİ</th>
-            <th>ÇİFT RENK</th>
-            <th>K.YEŞİL K.GRİ</th>
+            <th>RENK</th>
+            <th>ISKONTO</th>
+            <th>ALIŞ & SATIŞ</th>
         </tr>
-        {% for stok in stoklar %}
+        {% for stok in data %}
         <tr>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD'] }}" data-field="OLİMPİA_KOD">{% if stok['OLİMPİA_KOD'] is not none %}{{ stok['OLİMPİA_KOD'] }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="STOK_ADİ">{% if stok['STOK_ADİ'] is not none %}{{ stok['STOK_ADİ'] }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="ÜY">{% if stok['ÜY'] is not none %}{{ stok['ÜY'] }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD'] }}" data-field="KONUM">{% if stok['KONUM'] is not none %}{{ stok['KONUM'] }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="MODEL">{% if stok['MODEL'] is not none %}{{ stok['MODEL'] }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD'] }}" data-field="ÖZELLİK">{% if stok['ÖZELLİK'] is not none %}{{ stok['ÖZELLİK'] }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="DELİK">{% if stok['DELİK'] is not none %}{{ stok['DELİK'] }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="MM">{% if stok['MM'] is not none %}{{ stok['MM'] }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="EBAT">{% if stok['EBAT'] is not none %}  {{ stok['EBAT'] }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="BEYAZ">{% if stok['BEYAZ'] is not none %}{{"%.2f"|format(stok['BEYAZ']) }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="RENKLİ">{% if stok['RENKLİ'] is not none %}{{ "%.2f"|format(stok['RENKLİ']) }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="CIFT_RENK">{% if stok['CIFT_RENK'] is not none %}{{ "%.2f"|format(stok['CIFT_RENK']) }}{% endif %}</td>
-            <td class="editable" data-stok-id="{{ stok['OLİMPİA_KOD']  }}" data-field="KYESİL_KGRİ">{% if stok['KYESİL_KGRİ'] is not none %}{{ "%.2f"|format(stok['KYESİL_KGRİ']) }}{% endif %}</td>
+            <td><button class="edit-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Düzenle</button></td>
+
+            <td>{{ stok.OLIMPIA_KOD }}</td>
+            <td>{{ stok.STOK_ADI }}</td>
+            <td>{{ stok.UY if stok.UY is not none else '' }}</td>
+            <td>{{ stok.KONUM if stok.KONUM is not none else '' }}</td>
+            <td>{{ stok.MODEL if stok.MODEL is not none else '' }}</td>
+            <td>{{ stok.OZELLIK if stok.OZELLIK is not none else '' }}</td>
+            <td>{{ stok.DELIK if stok.DELIK is not none else '' }}</td>
+            <td>{{ stok.MM if stok.MM is not none else '' }}</td>
+            <td>{{ stok.M2 if stok.M2 is not none else '' }}</td>
+            <td>{{ stok.RENK if stok.RENK is not none else '' }}</td>
+            <td>{{ stok.ISKONTO if stok.ISKONTO is not none else '' }}</td>
+            <td></td>
         </tr>
         {% endfor %}
     </table>
+
+
+    <div id="editForm" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Stok Bilgi ve Düzenleme Formu</h2>
+            <form id="editFormContent">
+            </form>
+            <button type="button" onclick="submitForm()">Kaydet</button>
+        </div>
+    </div>
+    <button onclick="openAddForm()">Stok Ekle</button>
+
     <script src="../static/script.js"></script>
 </body>
 </html>
