@@ -18,9 +18,20 @@ def index():
         cursor.execute("SELECT * FROM STOK")
         data = cursor.fetchall()
 
-        return render_template('index.html', data=data)
+        colors_data = {}
+        for stok in data:
+            olimpia_kod = stok['OLIMPIA_KOD']
+            cursor.execute("SELECT renk_adi, fiyat FROM depo WHERE OLIMPIA_KOD = %s", (olimpia_kod,))
+            renkler = cursor.fetchall()
+
+
+            colors_data[olimpia_kod] = [
+                f"{renk['renk_adi']}: {renk['fiyat'] or ''}" for renk in renkler
+            ]
+        return render_template('index.html', data=data, colors_data=colors_data)
 
     except mysql.connector.Error as err:
+        print(err)
         return jsonify({'error': str(err)}), 500
     finally:
         cursor.close()
@@ -47,9 +58,9 @@ def add_product():
         else:
             # Insert a new entry with auto-incremented STOK_KODU
             insert_sql = """
-            INSERT INTO URUN (OLIMPIA_KOD, FIYAT, ALIS_KODU, SATIS_KODU, ADET, RENK_ADI)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            """
+            INSERT INTO DEPO ( OLIMPIA_KOD,   RENK_ADI)
+            VALUES ( %s, %s)
+            """ # alıs kodu & satıs kodu & stok kodu is automatically decided
             insert_values = (
                 data['OLIMPIA_KOD'], data.get('FIYAT'), data.get('ALIS_KODU', None),  # ALIS_KODU null olabilir
                 data.get('SATIS_KODU'), data['ADET'], data['RENK_ADI']
@@ -91,9 +102,11 @@ def add_stock():
         cursor.close()
         connection.close()
 
+
 @app.route('/update_stock/<int:olimpia_kod>', methods=['PUT'])
 def update_stock(olimpia_kod):
     data = request.form.to_dict()
+    print(data)
     try:
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
@@ -102,8 +115,11 @@ def update_stock(olimpia_kod):
         update_values = []
 
         for key, value in data.items():
-            update_fields.append(f"{key} = %s")
-            update_values.append(value)
+            if key != 'stokId':
+                if value == '':  # to store in database if empty.
+                    value = None
+                update_fields.append(f"{key} = %s")
+                update_values.append(value)
 
         update_values.append(olimpia_kod)
 
@@ -117,9 +133,10 @@ def update_stock(olimpia_kod):
         if cursor.rowcount == 0:
             return jsonify({'error': 'Stock not found.'}), 404
 
-        return jsonify({'message': 'Stock successfully updated.'}), 200
+        return jsonify({'message': 'Stok başarıyla güncellendi.'}), 200
 
     except mysql.connector.Error as err:
+        print(err)
         return jsonify({'error': str(err)}), 500
 
     finally:
@@ -186,10 +203,12 @@ def get_colors():
         cursor.close()
         connection.close()
 
+
 @app.route('/add_color', methods=['POST'])
 def add_color():
     data = request.json
     new_color = data.get('color')
+
     if not new_color:
         return jsonify({'error': 'Renk bilgisi eksik.'}), 400
 
@@ -197,18 +216,78 @@ def add_color():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
 
+        # Check if the color already exists
+        cursor.execute("SELECT COUNT(*) FROM renk WHERE renk_adi = %s", (new_color,))
+        result = cursor.fetchone()
+
+        if result[0] > 0:
+            return jsonify({'error': 'Bu renk zaten mevcut.'}), 400
+
+        # Insert the new color
         color_sql = "INSERT INTO renk (renk_adi) VALUES (%s)"
         cursor.execute(color_sql, (new_color,))
         connection.commit()
 
         return jsonify({'message': 'Renk başarıyla eklendi.'}), 201
+
+    except mysql.connector.Error as err:
+        return jsonify({'error': str(err)}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
+@app.route('/add_purchase', methods=['POST'])
+def add_purchase():
+    data = request.form.to_dict()
+    if 'RENK' in data:
+        data['renk_adi'] = data.pop('RENK')
+    if 'Tarih' in data:
+        data['ALIM_TARIHI'] = data.pop('Tarih')
+    fields = ', '.join(data.keys())
+    placeholders = ', '.join(['%s'] * len(data))
+    values = list(data.values())
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor()
+    cursor.execute(f"INSERT INTO alim_bilgisi ({fields}) VALUES ({placeholders})", values)
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Alış eklendi"}), 201
+
+
+@app.route('/add_sale', methods=['POST'])
+def add_sale():
+    data = request.form.to_dict()
+    fields = ', '.join(data.keys())
+    placeholders = ', '.join(['%s'] * len(data))
+    values = list(data.values())
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor()
+    cursor.execute(f"INSERT INTO satis_bilgisi ({fields}) VALUES ({placeholders})", values)
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Satış eklendi"}), 201
+
+@app.route('/get_purchases/<int:olimpia_kod>', methods=['GET'])
+def get_purchases(olimpia_kod):
+    try:
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+
+        cursor.execute("SELECT ALIM_TARIHI, ADET, FIYAT, renk_adi FROM alim_bilgisi WHERE OLIMPIA_KOD = %s", (olimpia_kod,))
+        purchases = cursor.fetchall()
+
+        if not purchases:
+            return jsonify({'error': 'Alım bilgisi bulunamadı.'}), 404
+
+        return jsonify(purchases), 200
     except mysql.connector.Error as err:
         return jsonify({'error': str(err)}), 500
     finally:
         cursor.close()
         connection.close()
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
