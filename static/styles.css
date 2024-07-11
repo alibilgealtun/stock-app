@@ -121,3 +121,18 @@ tr:hover {
     padding: 8px;
     font-size: 14px;
 }
+
+
+#operations{
+    width:20%;
+    margin:0px;
+    padding:0px;
+}
+#operations button{
+    padding:6px;
+    margin:0px;
+}
+
+
+
+

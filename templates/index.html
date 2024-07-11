@@ -6,7 +6,6 @@
     <link rel="stylesheet" type="text/css" href="../static/styles.css">
     <title>Stok Sayım Uygulaması</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 </head>
 <body>
     <h1>Stok Listesi</h1>
@@ -14,52 +13,52 @@
     <input type="text" id="searchInput" placeholder="Ara...">
     <button onclick="searchTable()">Ara</button>
     <button onclick="openAddForm()">Stok Ekle</button>
+    <input type="checkbox" id="depoToggle">
+    <label for="depoToggle">Depodakilere Bak</label>
 
     <table border="1" id="stokTable">
         <tr>
             <th>İşlem</th>
             <th>OLIMPIA KOD</th>
             <th>STOK ADI</th>
-            <th>ÜY</th>
-            <th>KONUM</th>
             <th>MODEL</th>
             <th>ÖZELLİK</th>
-            <th>DELİK</th>
-            <th>MM</th>
-            <th>M2</th>
-            <th>RENK</th>
+            <th>TOPLAM ADET</th>
+            <th>RENK: FİYAT</th>
             <th>ISKONTO</th>
-            <th>ALIŞ & SATIŞ</th>
         </tr>
         {% for stok in data %}
         <tr>
-            <td>
-                <button class="edit-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Düzenle</button>
-                <button class="add-purchase-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">ALIŞ EKLE</button>
-            <button class="add-sale-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">SATIŞ EKLE</button>
-
+            <td id="operations">
+                <button class="edit-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Detay</button>
+                <button class="add-purchase-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Alım Ekle</button>
+                <button class="add-sale-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Satış Ekle</button>
             </td>
-
             <td>{{ stok.OLIMPIA_KOD }}</td>
             <td>{{ stok.STOK_ADI }}</td>
-            <td>{{ stok.UY if stok.UY is not none else '' }}</td>
-            <td>{{ stok.KONUM if stok.KONUM is not none else '' }}</td>
             <td>{{ stok.MODEL if stok.MODEL is not none else '' }}</td>
             <td>{{ stok.OZELLIK if stok.OZELLIK is not none else '' }}</td>
-            <td>{{ stok.DELIK if stok.DELIK is not none else '' }}</td>
-            <td>{{ stok.MM if stok.MM is not none else '' }}</td>
-      <td>
-            <input type="number" class="ebat-input" value="{{ stok.M2 if stok.M2 is not none else '' }}" onchange="updateEbat(this)" required>
-        </td>
-            <td>{{ stok.RENK if stok.RENK is not none else '' }}</td>
-   <td>
-            <input type="number" class="iskonto-input" onchange="calculateDiscountedEbat(this)" required>
-        </td>
-        <td></td>
+            <td>{{ stok.ADET if stok.ADET is not none else '' }}</td>
+            <td>
+                <div id="renkFiyatListesi">
+                    {% if colors_data[stok.OLIMPIA_KOD] %}
+                        {% for renk_fiyat in colors_data[stok.OLIMPIA_KOD] %}
+                            <div class="renkFiyatItem" data-original-price="{{ renk_fiyat.split(':')[1] }}">
+                                <span class="renk">{{ renk_fiyat.split(':')[0] }}</span>:
+                                <span class="fiyat">{{renk_fiyat.split(':')[1]}}</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div></div>
+                    {% endif %}
+                </div>
+            </td>
+            <td>
+                <input type="number" class="iskonto-input" min="0" step="0.01" onkeypress="checkEnter(event)">
+            </td>
         </tr>
         {% endfor %}
     </table>
-
 
     <div id="editForm" class="modal">
         <div class="modal-content">
@@ -67,19 +66,22 @@
             <h2>Stok Bilgi ve Düzenleme Formu</h2>
             <form id="editFormContent">
                 <input type="hidden" id="stokId" name="stokId">
-
             </form>
             <button type="button" onclick="submitForm()">Kaydet</button>
-        </div>
-    </div>
-     <div id="addStockForm" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2>Stok Ekle </h2>
-                <form id="addStockContent">
-                </form>
+            <div id="purchaseDetails" style="display: none;">
+                <h3>Alımlar</h3>
+                <ul id="purchaseList"></ul>
             </div>
         </div>
+    </div>
+
+    <div id="addStockForm" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Stok Ekle </h2>
+            <form id="addStockContent"></form>
+        </div>
+    </div>
 
     <div id="purchaseForm" class="modal">
         <div class="modal-content">
@@ -94,9 +96,7 @@
                 <label for="purchaseFiyat">Fiyat:</label>
                 <input type="number" step="10" id="purchaseFiyat" name="FIYAT"><br>
                 <label for="RENK">RENK</label>
-                <select id="RENK" name="RENK">
-                    <!-- Mevcut renkler buraya yüklenecek -->
-                </select>
+                <select id="RENK" name="RENK"></select>
                 <br>
                 <input type="text" id="newColor" placeholder="Yeni Renk Ekle">
                 <button type="button" onclick="addNewColor()">Renk Ekle</button>
@@ -105,32 +105,30 @@
         </div>
     </div>
 
-
     <div id="saleForm" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Satış Ekle</h2>
-        <form id="saleFormContent">
-            <input type="hidden" id="saleOlimpiaKod" name="OLIMPIA_KOD">
-            <label for="saleDate">Tarih:</label>
-            <input type="date" id="saleDate" name="SATIS_TARIHI"><br>
-            <label for="saleAdet">Adet:</label>
-            <input type="number" id="saleAdet" name="ADET"><br>
-            <label for="saleFiyat">Fiyat:</label>
-            <input type="number" step="10" id="saleFiyat" name="FIYAT"><br>
-            <label for="saleRenk">RENK</label>
-            <select id="saleRenk" name="RENK">
-                <!-- Mevcut renkler buraya yüklenecek -->
-            </select>
-            <input type="text" id="newColorSale" placeholder="Yeni Renk Ekle">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Satış Ekle</h2>
+            <form id="saleFormContent">
+                <input type="hidden" id="saleOlimpiaKod" name="OLIMPIA_KOD">
+                <label for="saleDate">Tarih:</label>
+                <input type="date" id="saleDate" name="SATIS_TARIHI"><br>
+                <label for="saleAdet">Adet:</label>
+                <input type="number" id="saleAdet" name="ADET"><br>
+                <label for="saleFiyat">Fiyat:</label>
+                <input type="number" step="10" id="saleFiyat" name="FIYAT"><br>
+                <label for="saleRenk">RENK</label>
+                <select id="saleRenk" name="RENK"></select>
+                <input type="text" id="newColorSale" placeholder="Yeni Renk Ekle">
                 <button type="button" onclick="addNewColorSale()">Renk Ekle</button>
-
-            <br>
-            <button type="button" onclick="submitSaleForm()">Kaydet</button>
-        </form>
+                <br>
+                <button type="button" onclick="submitSaleForm()">Kaydet</button>
+            </form>
+        </div>
     </div>
-</div>
 
     <script src="../static/script.js"></script>
 </body>
 </html>
+
+
