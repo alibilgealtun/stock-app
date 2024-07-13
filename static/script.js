@@ -91,7 +91,7 @@ $(document).ready(function() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
-                        alert(data.error);
+                        console.log(data.error);
                     } else {
                         const purchaseList = document.getElementById('purchaseList');
                         purchaseList.innerHTML = ''; // Clear previous list
