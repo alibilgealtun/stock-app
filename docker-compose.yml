@@ -8,8 +8,11 @@ services:
     volumes:
       - .:/app
     environment:
-      FLASK_ENV: development
-    command: python app.py
+      - FLASK_ENV=development
+    depends_on:
+      - db
 
-volumes:
-  db_data:
+  db:
+    image: nouchka/sqlite3
+    volumes:
+      - ./olimpia.db:/data/olimpia.db
