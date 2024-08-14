@@ -129,39 +129,64 @@ function submitForm() {
 
 function openAddForm() {
     $('#addStockForm').css('display', 'block');
-    $('#addStockContent').empty(); // Önceki form içeriğini temizle
+    $('#addStockContent').empty(); // Clear previous form content
+
+    // Append the form fields
     $('#addStockContent').append(`
-        <label for="OLIMPIA_KOD">OLIMPIA KOD</label>
-        <input type="text" id="OLIMPIA_KOD" name="OLIMPIA_KOD"><br>
-        <label for="STOK_ADI">STOK ADI</label>
-        <input type="text" id="STOK_ADI" name="STOK_ADI"><br>
-        <label for="UY">ÜY</label>
-        <input type="text" id="UY" name="UY"><br>
-        <label for="KONUM">KONUM</label>
-        <input type="text" id="KONUM" name="KONUM"><br>
-        <label for="MODEL">MODEL</label>
-        <input type="text" id="MODEL" name="MODEL"><br>
-        <label for="OZELLIK">ÖZELLİK</label>
-        <input type="text" id="OZELLIK" name="OZELLIK"><br>
-        <label for="DELIK">DELİK</label>
-        <input type="text" id="DELIK" name="DELIK"><br>
-        <label for="MM">MM</label>
-        <input type="text" id="MM" name="MM"><br>
-        <label for="M2">EBAT</label>
-        <input type="text" id="M2" name="M2"><br>
-        <label for="RENK">RENK</label>
-        <select id="RENK" name="RENK">
-            <!-- Mevcut renkler buraya yüklenecek -->
-        </select>
-        <br>
-        <input type="text" id="newColor" placeholder="Yeni Renk Ekle">
-        <button type="button" onclick="addNewColor()">Renk Ekle</button>
-        <br>
-        <label for="ISKONTO">ISKONTO</label>
-        <input type="text" id="ISKONTO" name="ISKONTO"><br>
+        <div class="form-field">
+            <label for="OLIMPIA_KOD">OLIMPIA KOD</label>
+            <input type="text" id="OLIMPIA_KOD" name="OLIMPIA_KOD">
+        </div>
+        <div class="form-field">
+            <label for="STOK_ADI">STOK ADI</label>
+            <input type="text" id="STOK_ADI" name="STOK_ADI">
+        </div>
+        <div class="form-field">
+            <label for="UY">ÜY</label>
+            <input type="text" id="UY" name="UY">
+        </div>
+        <div class="form-field">
+            <label for="KONUM">KONUM</label>
+            <input type="text" id="KONUM" name="KONUM">
+        </div>
+        <div class="form-field">
+            <label for="MODEL">MODEL</label>
+            <input type="text" id="MODEL" name="MODEL">
+        </div>
+        <div class="form-field">
+            <label for="OZELLIK">ÖZELLİK</label>
+            <input type="text" id="OZELLIK" name="OZELLIK">
+        </div>
+        <div class="form-field">
+            <label for="DELIK">DELİK</label>
+            <input type="text" id="DELIK" name="DELIK">
+        </div>
+        <div class="form-field">
+            <label for="MM">MM</label>
+            <input type="text" id="MM" name="MM">
+        </div>
+        <div class="form-field">
+            <label for="M2">EBAT</label>
+            <input type="text" id="M2" name="M2">
+        </div>
+        <div class="form-field-renk">
+            <label for="RENK">RENK</label>
+            <select id="RENK" name="RENK">
+                <!-- Mevcut renkler buraya yüklenecek -->
+            </select>
+            <input type="text" id="newColor" placeholder="Yeni Renk Ekle">
+            <button type="button" onclick="addNewColor()">Renk Ekle</button>
+        </div>
+        <div class="form-field">
+            <label for="ISKONTO">ISKONTO</label>
+            <input type="text" id="ISKONTO" name="ISKONTO">
+        </div>
     `);
-    $('#addStockContent').append(`<button type="button" class="save-btn" onclick="addStock()">KAYDET </button>`);
-    loadColors();
+
+    // Append the save button
+    $('#addStockContent').append(`<button type="button" class="save-btn" onclick="addStock()">KAYDET</button>`);
+
+    loadColors(); // Load the colors into the RENK dropdown
 }
 
 function loadColors() {

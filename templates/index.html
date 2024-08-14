@@ -45,7 +45,7 @@
                         {% for renk_fiyat in colors_data[stok.OLIMPIA_KOD] %}
                             <div class="renkFiyatItem" data-original-price="{{ renk_fiyat.split(':')[1] }}">
                                 <span class="renk">{{ renk_fiyat.split(':')[0] }}</span>:
-                                <span class="fiyat">{{renk_fiyat.split(':')[1]}}</span>
+                                 <span class="fiyat">{{ '%.2f' | format(renk_fiyat.split(':')[1] | float) }}</span>
                             </div>
                         {% endfor %}
                     {% else %}
@@ -97,7 +97,7 @@
                 <input type="number" step="10" id="purchaseFiyat" name="FIYAT"><br>
                 <label for="RENK">RENK</label>
                 <select id="RENK" name="RENK"></select>
-                <br>
+
                 <input type="text" id="newColor" placeholder="Yeni Renk Ekle">
                 <button type="button" onclick="addNewColor()">Renk Ekle</button>
             </form>
@@ -110,19 +110,28 @@
             <span class="close">&times;</span>
             <h2>Satış Ekle</h2>
             <form id="saleFormContent">
-                <input type="hidden" id="saleOlimpiaKod" name="OLIMPIA_KOD">
-                <label for="saleDate">Tarih:</label>
-                <input type="date" id="saleDate" name="SATIS_TARIHI"><br>
-                <label for="saleAdet">Adet:</label>
-                <input type="number" id="saleAdet" name="ADET"><br>
-                <label for="saleFiyat">Fiyat:</label>
-                <input type="number" step="10" id="saleFiyat" name="FIYAT"><br>
-                <label for="saleRenk">RENK</label>
-                <select id="saleRenk" name="RENK"></select>
-                <input type="text" id="newColorSale" placeholder="Yeni Renk Ekle">
-                <button type="button" onclick="addNewColorSale()">Renk Ekle</button>
-                <br>
-                <button type="button" onclick="submitSaleForm()">Kaydet</button>
+                               <div id="saleFormContent">
+                    <div class="form-field">
+                        <label for="saleDate">Tarih:</label>
+                        <input type="date" id="saleDate" name="SATIS_TARIHI">
+                    </div>
+                    <div class="form-field">
+                        <label for="saleAdet">Adet:</label>
+                        <input type="number" id="saleAdet" name="ADET">
+                    </div>
+                    <div class="form-field">
+                        <label for="saleFiyat">Fiyat:</label>
+                        <input type="number" step="10" id="saleFiyat" name="FIYAT">
+                    </div>
+                    <div class="form-field-renk">
+                        <label for="saleRenk">RENK</label>
+                        <select id="saleRenk" name="RENK"></select>
+                        <input type="text" id="newColorSale" placeholder="Yeni Renk Ekle">
+                        <button type="button" onclick="addNewColorSale()">Renk Ekle</button>
+                    </div>
+                    <button type="submit" onclick="submitSaleForm()">Kaydet</button>
+                </div>
+
             </form>
         </div>
     </div>

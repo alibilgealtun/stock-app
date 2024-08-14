@@ -1,67 +1,71 @@
+/* Basic Page Styles */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
+    background-color: #e0f7fa; /* Light blue background for better contrast */
     color: #333;
     margin: 0;
     padding: 0;
 }
 
+/* Main Container */
 .container {
     width: 90%;
     margin: 20px auto;
     padding: 20px;
     background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 12px; /* Softer rounded corners */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
+/* Headings */
 h1 {
     text-align: center;
-    margin-bottom: 20px;
-    color: #5a5a5a;
+    margin-bottom: 30px;
+    color: #00796b; /* Dark teal color */
+    font-size: 28px; /* Larger font size */
 }
 
-.search-container {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
+/* Search Bar and Buttons */
 #searchInput {
-    width: 400px;
-    padding: 10px;
-    border-radius: 4px;
+    width: 50%; /* Wider search input */
+    padding: 12px; /* Increased padding */
+    border-radius: 6px;
     border: 1px solid #ccc;
-    margin-right: 10px;
-    margin-bottom:20px;
-    margin-left:10px;
+    margin: 0 10px 20px 10px;
+    font-size: 16px; /* Larger text */
 }
 
 button {
-    padding: 10px 20px;
+    padding: 12px 25px; /* Larger buttons */
     border: none;
-    background-color: #5cb85c;
+    background-color: #00796b; /* Teal button color */
     color: white;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
+    font-size: 16px; /* Larger text */
 }
 
 button:hover {
-    background-color: #4cae4c;
+    background-color: #004d40; /* Darker teal on hover */
 }
 
+/* Table Styles */
 table {
     width: 100%;
     border-collapse: collapse;
+    margin-bottom: 30px; /* Added space below the table */
 }
 
 th, td {
-    padding: 12px;
+    padding: 15px; /* Increased padding for more space */
     text-align: center;
     border-bottom: 1px solid #ddd;
+    font-size: 16px; /* Larger text */
 }
 
 th {
-    background-color: #f8f8f8;
+    background-color: #b2dfdb; /* Light teal background for header */
+    font-weight: bold;
 }
 
 tr:nth-child(even) {
@@ -69,9 +73,10 @@ tr:nth-child(even) {
 }
 
 tr:hover {
-    background-color: #e9e9e9;
+    background-color: #e0f2f1; /* Lighter hover effect */
 }
 
+/* Modal (Popup) Styles */
 .modal {
     display: none;
     position: fixed;
@@ -81,58 +86,154 @@ tr:hover {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgb(0,0,0);
-    background-color: rgba(0,0,0,0.4);
+    background-color: rgba(0,0,0,0.5); /* Darker overlay */
     padding-top: 60px;
 }
 
 .modal-content {
     background-color: #fefefe;
     margin: 5% auto;
-    padding: 20px;
+    padding: 30px; /* Increased padding */
     border: 1px solid #888;
-    width: 80%;
+    width: 50%; /* Centered modal width */
+    border-radius: 10px; /* Rounded corners for modal */
+    position: relative; /* Ensure child elements like close button are positioned correctly */
 }
 
+/* Close Button */
 .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #888;
+    font-size: 32px; /* Larger close button */
     font-weight: bold;
+    cursor: pointer;
 }
 
 .close:hover,
 .close:focus {
-    color: black;
+    color: #333;
     text-decoration: none;
-    cursor: pointer;
 }
+
+/* Form Heading */
+.modal-content h2 {
+    font-size: 24px; /* Larger heading size */
+    margin-bottom: 20px; /* Space below heading */
+    color: #00796b; /* Teal color for heading */
+}
+
+/* Form Container */
+#addStockContent {
+    display: flex;
+    flex-wrap: wrap; /* Allows items to wrap to the next line */
+    gap: 20px; /* Space between form fields */
+    justify-content: space-between; /* Evenly distributes form fields */
+}
+
+/* Individual Form Fields */
 .form-field {
-    margin-bottom: 10px;
+    flex: 1 1 45%; /* Each field takes up about 45% of the width */
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px; /* Space below each field */
 }
 
 .form-field label {
     margin-bottom: 5px;
-    padding-right:10px;
+    font-size: 16px; /* Slightly larger label text */
+    color: #333;
 }
 
-.form-field input {
-    width: 10%;
-    padding: 8px;
-    font-size: 14px;
+.form-field input,
+.form-field select {
+    padding: 10px; /* More padding for inputs and selects */
+    font-size: 16px; /* Larger text for inputs */
+    border-radius: 5px; /* Rounded input fields */
+    border: 1px solid #ccc; /* Border color */
 }
 
-
-#operations{
-    width:20%;
-    margin:0px;
-    padding:0px;
-}
-#operations button{
-    padding:6px;
-    margin:0px;
+/* Aligning RENK, Dropdown, New Color Input, and Button in the Same Row */
+.form-field-renk {
+    flex: 1 1 100%; /* Full width */
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between RENK, Yeni Renk Ekle, and Renk Ekle */
+    margin-bottom: 20px; /* Space below the renk field */
 }
 
+.form-field-renk label {
+    margin-bottom: 0; /* Align with input */
+    flex: 0 0 auto; /* Prevent label from growing */
+}
 
+#RENK, #newColor {
+    flex: 1; /* Take up equal space */
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
 
+button[type="button"] {
+    padding: 10px 20px;
+    background-color: #00796b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    white-space: nowrap; /* Prevent the button text from wrapping */
+}
+
+button[type="button"]:hover {
+    background-color: #004d40; /* Darker teal on hover */
+}
+
+/* Submit Button */
+button[type="submit"] {
+    padding: 12px 20px;
+    font-size: 18px; /* Larger submit button */
+    background-color: #00796b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%; /* Full width button */
+    margin-top: 20px; /* Space above the submit button */
+}
+
+button[type="submit"]:hover {
+    background-color: #004d40;
+}
+
+.modal {
+    display: none; /* Hide by default */
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5); /* Dark overlay */
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 30px;
+    border: 1px solid #888;
+    width: 70%;
+    border-radius: 10px;
+    position: relative;
+}
+
+#operations button {
+    padding: 5px 10px; /* Reduced padding */
+    margin: 3px; /* Added margin */
+    font-size: 14px; /* Ensure readability with reduced padding */
+}
 
