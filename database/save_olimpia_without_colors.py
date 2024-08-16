@@ -3,32 +3,27 @@ import sqlite3
 from db import initialize_db
 import numpy as np
 
-
 def clean_numeric_column(column):
-    """Convert valid numbers and mathematical expressions to floats, others to NaN."""
-
+    """Keep numeric columns as strings, preserving mathematical expressions."""
     def convert_value(value):
-        try:
-            if isinstance(value, tuple):
-                return np.nan  # or handle tuples appropriately if needed
-            elif isinstance(value, str):
-                # Safely evaluate if it contains a mathematical expression
-                return float(eval(value)) if any(op in value for op in '+-*/') else float(value)
-            else:
-                return float(value)
-        except (ValueError, SyntaxError, TypeError):
-            return np.nan  # or return 0 or some other default value
+        if isinstance(value, tuple):
+            return np.nan  # Handle tuples if needed
+        elif isinstance(value, str):
+            # Simply return the string without evaluating it
+            return value
+        else:
+            # Convert non-string values to string
+            return str(value)
 
     return column.apply(convert_value)
-
 
 # Database connection details
 db_path = '../olimpia.db'  # SQLite database file
 initialize_db(db_path)  # Initialize the database tables
 
-# Load the Excel file
+# Load the Excel file with OLIMPIA_KOD as string
 file_path = '../OlimpiaLAST.XLSX'  # Update with the correct path
-df = pd.read_excel(file_path, sheet_name='Sayfa1')
+df = pd.read_excel(file_path, sheet_name='Sayfa1', dtype={'OLIMPIA_KOD': str})
 
 # Data transformation (if needed)
 df.columns = df.columns.str.strip()  # Strip any whitespace from column names
