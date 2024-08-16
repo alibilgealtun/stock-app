@@ -125,7 +125,7 @@ tr:hover {
 }
 
 /* Form Container */
-#addStockContent {
+#addStockContent, #editFormContent {
     display: flex;
     flex-wrap: wrap; /* Allows items to wrap to the next line */
     gap: 20px; /* Space between form fields */
@@ -236,4 +236,10 @@ button[type="submit"]:hover {
     margin: 3px; /* Added margin */
     font-size: 14px; /* Ensure readability with reduced padding */
 }
-
+#purchaseFormContent{
+    margin-bottom: 20px;
+}
+#purchaseFormContent input,
+#purchaseFormContent label {
+  margin: 5px 0;
+}

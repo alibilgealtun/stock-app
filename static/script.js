@@ -320,23 +320,41 @@ function submitPurchaseForm() {
 }
 
 // Modalı açmak için gereken kod
+// Ensure that the sale form modal opens correctly
 function openSaleModal(olimpiaKod) {
     var modal = document.getElementById("saleForm");
     var span = modal.querySelector(".close");
     var purchaseOlimpiaKod = modal.querySelector("#saleOlimpiaKod");
 
-    purchaseOlimpiaKod.value = olimpiaKod; // OLIMPIA_KOD'u modal içindeki gizli input'a ata
-
-    modal.style.display = "block"; // Modalı göster
-    span.onclick = function () {
-        modal.style.display = "none"; // Modalın kapatılması için X simgesine basıldığında
+    // Set the OLIMPIA_KOD in the hidden input field
+    if (purchaseOlimpiaKod) {
+        purchaseOlimpiaKod.value = olimpiaKod;
     }
+
+    // Display the modal
+    modal.style.display = "block";
+
+    // Close the modal when the X is clicked
+    span.onclick = function () {
+        modal.style.display = "none";
+    }
+
+    // Close the modal when clicking outside of it
     window.onclick = function (event) {
         if (event.target == modal) {
-            modal.style.display = "none"; // Modalın kapatılması için dışarıya tıklanıldığında
+            modal.style.display = "none";
         }
     }
 }
+
+// Attach event listeners to the Satış Ekle buttons
+document.querySelectorAll(".add-sale-btn").forEach(button => {
+    button.addEventListener("click", function(event) {
+        var olimpiaKod = event.currentTarget.getAttribute("data-stok-id");
+        openSaleModal(olimpiaKod); // Open the sale modal
+    });
+});
+
 
 // Satış ekle butonlarına tıklanma olayını dinlemek için
 var saleButtons = document.querySelectorAll(".add-sale-btn");
@@ -366,6 +384,10 @@ window.onclick = function(event) {
 // İskonto uygulama fonksiyonu
 function applyDiscount(row) {
     var iskontoMiktari = parseFloat(row.querySelector('.iskonto-input').value);
+    if (isNaN(iskontoMiktari) ||iskontoMiktari <0){
+        alert("Doğru iskonto miktarı girdiğinize emin olun.")
+        return;
+    }
 
     // Row içindeki renk ve fiyat listesindeki her bir öğeyi döngüyle işleyelim
     var renkFiyatListesi = row.querySelectorAll('.renkFiyatItem');
@@ -373,14 +395,17 @@ function applyDiscount(row) {
         var renkSpan = item.querySelector('.renk');
 
         var fiyatSpan = item.querySelector('.fiyat');
-        console.log(fiyatSpan);
+        // console.log(fiyatSpan);
         // Eğer fiyat varsa işlem yapalım
         if (fiyatSpan && !isNaN(parseFloat(fiyatSpan.textContent))) {
             var orijinalFiyat = parseFloat(item.dataset.originalPrice);
             var indirimliFiyat = orijinalFiyat - (orijinalFiyat * (iskontoMiktari / 100));
-
+            if (indirimliFiyat<=0){
+                fiyatSpan.textContent=0.00001.toFixed(2);
+            }else{
             // Yeni fiyatı HTML içine yerleştirelim
             fiyatSpan.textContent =  indirimliFiyat.toFixed(2);
+            }
         } else {
             // Eğer fiyat yoksa boş bir değer yerleştirelim
             item.textContent = renkSpan.textContent+':';
@@ -397,3 +422,56 @@ function checkEnter(event) {
         }
     }
 }
+function calculateDiscount(event) {
+    // FOR ALIŞ EKLE PART
+    if (event.keyCode === 13) { // Check if Enter key is pressed
+        var originalPriceInput = document.getElementById('purchaseFiyat');
+        var discountRateInput = event.target; // Get the specific input that triggered the event
+        var discountedPriceSpan = document.getElementById('discountedPrice');
+
+        var originalPrice = parseFloat(originalPriceInput.value);
+        var discountRate = parseFloat(discountRateInput.value);
+
+        if (isNaN(discountRate) || discountRate < 0) {
+            alert("Doğru iskonto miktarı girdiğinize emin olun.");
+            discountedPriceSpan.textContent = ''; // Clear the discounted price
+            return;
+        }
+
+        if (!isNaN(originalPrice)) {
+            var discountedPrice = originalPrice - (originalPrice * (discountRate / 100));
+            // Ensure the discounted price does not go below a small positive threshold
+            discountedPrice = discountedPrice <= 0 ? 0.00001 : discountedPrice;
+            discountedPriceSpan.textContent = 'İskontolu Fiyat: ' + discountedPrice.toFixed(2) + ' TL';
+        } else {
+            discountedPriceSpan.textContent = '';
+        }
+    }
+}
+function calculateSaleDiscount(event) {
+    if (event.keyCode === 13) { // Check if Enter key is pressed
+        var saleFormContent = event.target.closest('#saleFormContent'); // Find the closest form content
+        var originalPriceInput = saleFormContent.querySelector('#saleFiyat');
+        var discountRateInput = event.target; // Get the specific input that triggered the event
+        var discountedPriceSpan = saleFormContent.querySelector('#saleDiscountedPrice');
+
+        var originalPrice = parseFloat(originalPriceInput.value);
+        var discountRate = parseFloat(discountRateInput.value);
+
+        if (isNaN(discountRate) || discountRate < 0) {
+            alert("Doğru iskonto miktarı girdiğinize emin olun.");
+            discountedPriceSpan.textContent = ''; // Clear the discounted price
+            return;
+        }
+
+        if (!isNaN(originalPrice)) {
+            var discountedPrice = originalPrice - (originalPrice * (discountRate / 100));
+            // Ensure the discounted price does not go below a small positive threshold
+            discountedPrice = discountedPrice <= 0 ? 0.00001 : discountedPrice;
+            discountedPriceSpan.textContent = 'İskontolu Fiyat: ' + discountedPrice.toFixed(2) + ' TL';
+        } else {
+            discountedPriceSpan.textContent = '';
+        }
+    }
+}
+
