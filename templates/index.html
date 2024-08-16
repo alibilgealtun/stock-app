@@ -6,6 +6,9 @@
     <link rel="stylesheet" type="text/css" href="../static/styles.css">
     <title>Stok Sayım Uygulaması</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
 </head>
 <body>
     <h1>Stok Listesi</h1>
@@ -17,6 +20,7 @@
     <label for="depoToggle">Depodakilere Bak</label>
 
     <table border="1" id="stokTable">
+        <thead>
         <tr>
             <th>İşlem</th>
             <th>OLIMPIA KOD</th>
@@ -27,6 +31,7 @@
             <th>RENK: FİYAT</th>
             <th>ISKONTO</th>
         </tr>
+        </thead>
         {% for stok in data %}
         <tr>
             <td id="operations">
@@ -39,41 +44,43 @@
             <td>{{ stok.MODEL if stok.MODEL is not none else '' }}</td>
             <td>{{ stok.OZELLIK if stok.OZELLIK is not none else '' }}</td>
             <td>{{ stok.ADET if stok.ADET is not none else '' }}</td>
+            <td>{{ renkFiyatListesiHtml|safe }}</td>
             <td>
-                <div id="renkFiyatListesi">
-                    {% if colors_data[stok.OLIMPIA_KOD] %}
-                        {% for renk_fiyat in colors_data[stok.OLIMPIA_KOD] %}
-                            <div class="renkFiyatItem" data-original-price="{{ renk_fiyat.split(':')[1] }}">
-                                <span class="renk">{{ renk_fiyat.split(':')[0] }}</span>:
-                                 <span class="fiyat">{{ '%.2f' | format(renk_fiyat.split(':')[1] | float) }}</span>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div></div>
-                    {% endif %}
-                </div>
+                <input type="number" class="iskonto-input" min="0" step="1" onkeypress="checkEnter(event)" placeholder="İndirim oranını girin. (%)">
             </td>
-            <td>
-                <input type="number" class="iskonto-input" min="0"  step="1" onkeypress="checkEnter(event)" placeholder="İndirim oranını girin. (%)">
-            </td>
+
         </tr>
         {% endfor %}
+
+
     </table>
 
+
+    <div id="paginationControls">
+        <button id="prevPageBtn">Önceki</button>
+        <span id="currentPage">1</span>
+        <button id="nextPageBtn">Sonraki</button>
+    </div>
+
     <div id="editForm" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Stok Bilgi ve Düzenleme Formu</h2>
-        <form id="editFormContent">
-            <input type="hidden" id="stokId" name="stokId">
-        </form>
-        <button type="button" onclick="submitForm()">Kaydet</button>
-        <div id="purchaseDetails" style="display: none;">
-            <h3>Alımlar</h3>
-            <ul id="purchaseList"></ul>
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Stok Bilgi ve Düzenleme Formu</h2>
+            <form id="editFormContent">
+                <input type="hidden" id="stokId" name="stokId">
+            </form>
+            <div id="purchaseDetails" style="display: none;">
+                <h3>Alımlar</h3>
+                <ul id="purchaseList"></ul>
+            </div>
+            <div id="saleDetails" style="display: none;">
+                <h3>Satışlar</h3>
+                <ul id="saleList"></ul>
+            </div>
+            <button type="button" onclick="submitForm()">Kaydet</button>
         </div>
     </div>
-</div>
+
 
 
     <div id="addStockForm" class="modal">
@@ -84,37 +91,39 @@
         </div>
     </div>
 
-    <div id="purchaseForm" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Alış Ekle</h2>
-            <form id="purchaseFormContent">
-                <input type="hidden" id="purchaseOlimpiaKod" name="OLIMPIA_KOD">
+<div id="purchaseForm" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Alış Ekle</h2>
+        <form id="purchaseFormContent">
+            <input type="hidden" id="purchaseOlimpiaKod" name="OLIMPIA_KOD">
 
-                <label for="purchaseDate">Tarih:</label>
-                <input type="date" id="purchaseDate" name="ALIM_TARIHI"><br>
+            <label for="purchaseDate">Tarih:</label>
+            <input type="text" id="purchaseDate" name="ALIM_TARIHI" placeholder="gg.aa.yyyy"><br>
 
-                <label for="purchaseAdet">Adet:</label>
-                <input type="number" id="purchaseAdet" name="ADET"><br>
+            <label for="purchaseAdet">Adet:</label>
+            <input type="number" id="purchaseAdet" name="ADET"><br>
 
-                <label for="purchaseFiyat">Fiyat:</label>
-                <input type="number" step="10" id="purchaseFiyat" name="FIYAT">
+            <label for="RENK">RENK</label>
+            <select id="RENK" name="RENK"></select>
 
-                   <label style="margin-left:20px;" for="purchaseIskonto">İskonto:</label>
-                <input type="number" id="purchaseIskonto" class="iskonto-input" min="0" step="1" onkeypress="calculateDiscount(event)" placeholder="İndirim oranını girin. (%)">
-                <span id="discountedPrice" style="margin-left: 10px; font-weight: bold;"></span>
+            <input type="text" id="newColor" placeholder="Yeni Renk Ekle">
+            <button type="button" onclick="addNewColor()">Renk Ekle</button>
+            <br>
 
-                <br>
-                <label for="RENK">RENK</label>
-                <select id="RENK" name="RENK"></select>
+            <label for="purchaseFiyat">Fiyat:</label>
+            <select id="priceDropdown" onchange="syncPriceInputWithDropdown()">
+            </select>
+            <input type="number" step="10" id="purchaseFiyat" name="FIYAT" placeholder="Fiyat Girin"><br>
 
-                <input type="text" id="newColor" placeholder="Yeni Renk Ekle">
-                <button type="button" onclick="addNewColor()">Renk Ekle</button>
-            </form>
+            <label style="margin-left:20px;" for="purchaseIskonto">İskonto:</label>
+            <input type="number" id="purchaseIskonto" class="iskonto-input" min="0" step="1" onkeypress="calculateDiscount(event)" placeholder="İndirim oranını girin. (%)">
+            <span id="discountedPrice" style="margin-left: 10px; font-weight: bold;"></span>
+        </form>
 
-            <button type="button" onclick="submitPurchaseForm()">Kaydet</button>
-        </div>
+        <button type="button" onclick="submitPurchaseForm()">Kaydet</button>
     </div>
+</div>
 
 <div id="saleForm" class="modal">
     <div class="modal-content">
@@ -124,11 +133,17 @@
             <input type="hidden" id="saleOlimpiaKod" name="OLIMPIA_KOD">
 
             <label for="saleDate">Tarih:</label>
-            <input type="date" id="saleDate" name="SATIS_TARIHI"><br>
+            <input type="text" id="saleDate" name="SATIS_TARIHI" placeholder="gg.aa.yyyy"><br>
 
             <label for="saleAdet">Adet:</label>
             <input type="number" id="saleAdet" name="ADET"><br>
 
+            <label for="RENKSALE">RENK</label>
+            <select id="RENKSALE" name="RENK"></select>
+
+            <input type="text" id="newColorSale" placeholder="Yeni Renk Ekle">
+            <button type="button" onclick="addNewColorSale()">Renk Ekle</button>
+            <br>
             <label for="saleFiyat">Fiyat:</label>
             <input type="number" id="saleFiyat" step="10" name="FIYAT">
 
@@ -136,12 +151,7 @@
             <input type="number" id="saleIskonto" class="iskonto-input" min="0" step="1" onkeypress="calculateSaleDiscount(event)" placeholder="İndirim oranını girin. (%)">
             <span id="saleDiscountedPrice" style="margin-left: 10px; font-weight: bold;"></span> <!-- Place to show discounted price -->
 
-            <br>
-            <label for="saleRenk">RENK</label>
-            <select id="saleRenk" name="RENK"></select>
 
-            <input type="text" id="newColorSale" placeholder="Yeni Renk Ekle">
-            <button type="button" onclick="addNewColorSale()">Renk Ekle</button>
         </form>
         <button type="button" onclick="submitSaleForm()">Kaydet</button>
     </div>

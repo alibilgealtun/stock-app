@@ -243,3 +243,25 @@ button[type="submit"]:hover {
 #purchaseFormContent label {
   margin: 5px 0;
 }
+.error-message {
+    color: red;
+    font-size: 14px;
+    margin-top: 5px;
+}
+#saleFormContent{
+    margin-bottom: 20px;
+}
+#saleFormContent input,
+#saleFormContent label {
+    margin: 5px 0;
+}
+#paginationControls {
+    display:flex;
+    justify-content: center;
+    align-content: center;
+}
+#currentPage{
+    margin:10px;
+    font-size:20px;
+    font-weight: bold;
+}
