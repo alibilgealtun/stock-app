@@ -68,6 +68,7 @@ def create_satis_bilgisi_table(cursor):
         SATIS_TARIHI TEXT,
         ADET INTEGER,
         FIYAT REAL,
+        renk_adi TEXT,
         FOREIGN KEY (OLIMPIA_KOD) REFERENCES STOK(OLIMPIA_KOD)
     )
     ''')
