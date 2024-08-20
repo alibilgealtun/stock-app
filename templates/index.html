@@ -11,6 +11,7 @@
 
 </head>
 <body>
+
     <h1>Stok Listesi</h1>
 
     <input type="text" id="searchInput" placeholder="Ara...">
@@ -60,7 +61,13 @@
         <button id="prevPageBtn">Önceki</button>
         <span id="currentPage">1</span>
         <button id="nextPageBtn">Sonraki</button>
+        <div>
+            <label for="pageInput">Gitmek istediğiniz sayfa:</label>
+            <input type="number" id="pageInput" min="1">
+            <button onclick="changePage()">Git</button>
+        </div>
     </div>
+
 
     <div id="editForm" class="modal">
         <div class="modal-content">
@@ -111,14 +118,17 @@
             <button type="button" onclick="addNewColor()">Renk Ekle</button>
             <br>
 
+
+
             <label for="purchaseFiyat">Fiyat:</label>
-            <select id="priceDropdown" onchange="syncPriceInputWithDropdown()">
-            </select>
+            <select id="priceDropdown" onchange="syncPriceInputWithDropdown()"></select>
             <input type="number" step="10" id="purchaseFiyat" name="FIYAT" placeholder="Fiyat Girin"><br>
 
             <label style="margin-left:20px;" for="purchaseIskonto">İskonto:</label>
             <input type="number" id="purchaseIskonto" class="iskonto-input" min="0" step="1" onkeypress="calculateDiscount(event)" placeholder="İndirim oranını girin. (%)">
             <span id="discountedPrice" style="margin-left: 10px; font-weight: bold;"></span>
+
+
         </form>
 
         <button type="button" onclick="submitPurchaseForm()">Kaydet</button>
@@ -145,11 +155,15 @@
             <button type="button" onclick="addNewColorSale()">Renk Ekle</button>
             <br>
             <label for="saleFiyat">Fiyat:</label>
-            <input type="number" id="saleFiyat" step="10" name="FIYAT">
+            <select id="priceDropdownForSale" onchange="syncSalePriceInputWithDropdown()">
+                <!-- Options will be dynamically populated here -->
+            </select>
+            <input type="number" id="saleFiyat" step="10" name="FIYAT" placeholder="Fiyat Girin"><br>
 
             <label style="margin-left:20px;" for="saleIskonto">İskonto:</label>
             <input type="number" id="saleIskonto" class="iskonto-input" min="0" step="1" onkeypress="calculateSaleDiscount(event)" placeholder="İndirim oranını girin. (%)">
-            <span id="saleDiscountedPrice" style="margin-left: 10px; font-weight: bold;"></span> <!-- Place to show discounted price -->
+            <span id="saleDiscountedPrice" style="margin-left: 10px; font-weight: bold;"></span>
+
 
 
         </form>

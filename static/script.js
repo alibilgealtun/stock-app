@@ -1,16 +1,24 @@
-$(document).ready(function() {
+$(document).ready(function () {
+    initializeDatePicker();
+    handlePageLoad();
+    attachGlobalEventHandlers();
+    handlePaginationButtons();
+    handleDepoFilterToggle();
+});
+
+let currentPage = 1; // Track the current page
+let currentQuery = ''; // Track the current search query
+function initializeDatePicker() {
     $.datepicker.regional['tr'] = {
         closeText: 'Kapat',
         prevText: '&#x3C;geri',
         nextText: 'ileri&#x3E;',
         currentText: 'Bugün',
-        monthNames: ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
-            'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
-        monthNamesShort: ['Oca','Şub','Mar','Nis','May','Haz',
-            'Tem','Ağu','Eyl','Eki','Kas','Ara'],
-        dayNames: ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'],
-        dayNamesShort: ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'],
-        dayNamesMin: ['Pz','Pt','Sa','Ça','Pe','Cu','Ct'],
+        monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+        monthNamesShort: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'],
+        dayNames: ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
+        dayNamesShort: ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'],
+        dayNamesMin: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'],
         weekHeader: 'Hf',
         dateFormat: 'dd.mm.yy',
         firstDay: 1,
@@ -19,366 +27,558 @@ $(document).ready(function() {
         yearSuffix: ''
     };
     $.datepicker.setDefaults($.datepicker.regional['tr']);
-
     $("#purchaseDate, #saleDate").datepicker({
         changeMonth: true,
         changeYear: true,
-    });
-
-
-    // Close modal when clicking outside of it
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = "none";
-        }
-    };
-
-
-    // Modal close functionality
-    document.querySelectorAll(".close").forEach(button => {
-        button.addEventListener("click", function() {
-            var modal = this.closest(".modal");
-            modal.style.display = "none";
-        });
-    });
-
-
-});
-
-$(document).ready(function() {
-    $("#searchInput").on('input', function() {
-        var query = $(this).val();
-        if (query.length >= 3) {  // Optional: only search if the query is long enough
-            searchAcrossData(query);
+        beforeShow: function(input, inst) {
+            setTimeout(function() {
+                inst.dpDiv.css({
+                    top: $(input).offset().top + $(input).outerHeight() + 10,
+                    left: $(input).offset().left
+                });
+            }, 0);
         }
     });
 
-    function searchAcrossData(query) {
-        $.ajax({
-            url: `/search?query=${query}&page=1&page_size=10`,
-            type: 'GET',
-            success: function(data) {
-                // Clear and populate the table with the search results
-                $("#stokTable tbody").empty();
-                data.forEach(function(stok) {
-                    var renkFiyatListesiHtml = '';
-                    stok.colors_data.forEach(function(color) {
-                        renkFiyatListesiHtml += `<span class="renk">${color.renk_adi}</span>: <span class="fiyat">${parseFloat(color.fiyat).toFixed(2)}</span>`;
-                    });
+}
 
-                    var rowHtml = `<tr>
-                        <td id="operations">
-                            <button class="edit-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Detay</button>
-                            <button class="add-purchase-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Alım Ekle</button>
-                            <button class="add-sale-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Satış Ekle</button>
-                        </td>
-                        <td>${stok.OLIMPIA_KOD}</td>
-                        <td>${stok.STOK_ADI || ''}</td>
-                        <td>${stok.MODEL || ''}</td>
-                        <td>${stok.OZELLIK || ''}</td>
-                        <td>${stok.ADET || ''}</td>
-                        <td class="renkFiyatItem" ">${renkFiyatListesiHtml}</td>
-                                    <td>
-                        <input type="number" class="iskonto-input" min="0" step="1" onkeypress="checkEnter(event)" placeholder="İndirim oranını girin. (%)">
-                    </td>
-
-                    </tr>`;
-                    $("#stokTable tbody").append(rowHtml);
-                });
-            },
-            error: function(err) {
-                console.error('Search error:', err);
-            }
-        });
+function handleChangingPage(event){
+    if (event.keyCode === 13) {
+        changePage();
     }
-});
+}
+function changePage() {
+    const pageInput = document.getElementById('pageInput').value;
+    const pageNumber = parseInt(pageInput, 10);
 
-$(document).ready(function() {
-    var currentPage = getPageFromUrl();
-    var depoFilterActive = false;
-
-    function loadPage(page) {
-        $.ajax({
-            url: `/get_stocks_paginated?page=${page}&only_depo=${depoFilterActive}`,
-            type: 'GET',
-            cache: false,
-            success: function(data) {
-                // Clear the existing table rows
-                $("#stokTable tbody").empty();
-
-                // Append the new rows
-                data.forEach(function(stok) {
-                    var renkFiyatListesiHtml = '';
-                    stok.colors_data.forEach(function(color) {
-                        renkFiyatListesiHtml += `<span class="renk">${color.renk_adi}</span>: <span class="fiyat">${parseFloat(color.fiyat).toFixed(2)}</span>`;
-                    });
-
-                    var rowHtml = `
-                    <tr>
-                        <td id="operations">
-                            <button class="edit-btn" data-stok-id="${stok.OLIMPIA_KOD}">Detay</button>
-                            <button class="add-purchase-btn" data-stok-id="${stok.OLIMPIA_KOD}">Alım Ekle</button>
-                            <button class="add-sale-btn" data-stok-id="${stok.OLIMPIA_KOD}">Satış Ekle</button>
-                        </td>
-                        <td>${stok.OLIMPIA_KOD}</td>
-                        <td>${stok.STOK_ADI}</td>
-                        <td>${stok.MODEL || ''}</td>
-                        <td>${stok.OZELLIK || ''}</td>
-                        <td>${stok.ADET || ''}</td>
-                        <td class="renkFiyatItem" ">${renkFiyatListesiHtml}</td>
-                        <td>
-                            <input type="number" class="iskonto-input" min="0" step="1" onkeypress="checkEnter(event)" placeholder="İndirim oranını girin. (%)">
-                        </td>
-                    </tr>`;
-
-                    $("#stokTable tbody").append(rowHtml);
-                });
-
-                // Update current page display
-                $("#currentPage").text(page);
-
-                // Reattach event handlers (because new DOM elements were added)
-                attachEventHandlers();
-            },
-            error: function(err) {
-                console.error('Error loading page:', err);
-            }
-        });
+    if (pageNumber && pageNumber > 0) {
+        currentPage = pageNumber; // Update the global currentPage variable
+        updatePage(currentPage);
+    } else {
+        alert('Please enter a valid page number.');
     }
-    // Ensure that if the URL changes, the page content is updated
-    $(window).on('popstate', function() {
-        loadPage(getPageFromUrl());
-    });
-    function getPageFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return parseInt(urlParams.get('page')) || 1;
-    }
-    function attachEventHandlers() {
-        $('.edit-btn').click(function() {
-            var stokId = $(this).attr('data-stok-id');
-            $.ajax({
-                url: '/get_stock/' + stokId,
-                type: 'GET',
-                success: function(data) {
-                    $('#editForm').css('display', 'block');
-                    var formContent = $('#editFormContent');
-                    formContent.empty();
-                    formContent.append('<input type="hidden" id="stokId" name="stokId" value="' + stokId + '">');
-                    Object.keys(data.stock).forEach(function(key) {
-                        if (key !== 'OLIMPIA_KOD') {
-                            var value = data.stock[key] !== null ? data.stock[key] : '';
-                            var inputField = '<div class="form-field">' +
-                                '<label for="' + key + '">' + key + '</label>' +
-                                '<input type="text" id="' + key + '" name="' + key + '" value="' + value + '">' +
-                                '</div>';
-                            formContent.append(inputField);
-                        }
-                    });
-                    // Display purchase details
-                    const purchaseList = document.getElementById('purchaseList');
-                    purchaseList.innerHTML = ''; // Clear previous list
-                    data.purchases.forEach(function(purchase) {
-                        const listItem = document.createElement('li');
-                        listItem.textContent = `Tarih: ${purchase.ALIM_TARIHI}, Adet: ${purchase.ADET}, Fiyat: ${purchase.FIYAT}, Renk: ${purchase.renk_adi}`;
-                        purchaseList.appendChild(listItem);
-                    });
+}
 
-                    // Display sale details
-                    const saleList = document.getElementById('saleList');
-                    saleList.innerHTML = ''; // Clear previous list
-                    data.sales.forEach(function(sale) {
-                        const listItem = document.createElement('li');
-                        listItem.textContent = `Tarih: ${sale.SATIS_TARIHI}, Adet: ${sale.ADET}, Fiyat: ${sale.FIYAT}, Renk: ${sale.renk_adi}`;
-                        saleList.appendChild(listItem);
-                    });
+function updatePage(page) {
+    const depoFilterActive = $('#depoToggle').is(':checked');
+    const queryParam = currentQuery ? `&query=${encodeURIComponent(currentQuery)}` : '';
+    window.history.pushState({}, '', `?page=${page}&only_depo=${depoFilterActive}${queryParam}`);
+    loadPage(page);
+}
 
-                    document.getElementById('purchaseDetails').style.display = 'block';
-                    document.getElementById('saleDetails').style.display = 'block';
-                },
-                error: function(err) {
-                    console.error('Hata:', err);
-                }
-            });
-        });
 
-        $('.add-purchase-btn').click(function() {
-            $('#purchaseForm input').val(''); // Clears the value of all input fields
-            $('#purchaseOlimpiaKod').val(stokId);
-            $('#purchaseForm').css('display', 'block');
-            loadColors();
-        });
-        $('.add-sale-btn').click(function() {
-            $('#saleForm input').val(''); // Clears the value of all input fields
-            var stokId = $(this).attr('data-stok-id');
-            $('#saleOlimpiaKod').val(stokId);
-            $('#saleForm').css('display', 'block');
-            loadColorsSale();
-        });
-
-    }
-    $("#depoToggle").change(function() {
-        depoFilterActive = $(this).prop('checked');
-        window.history.pushState({}, '', `?page=${currentPage}&only_depo=${depoFilterActive}`);
-        loadPage(currentPage);
-    });
-    // Pagination buttons
-    $("#prevPageBtn").click(function() {
+function handlePaginationButtons() {
+    $("#prevPageBtn").click(function () {
         if (currentPage > 1) {
             currentPage--;
-            window.history.pushState({}, '', `?page=${currentPage}&only_depo=${depoFilterActive}`);
-            loadPage(currentPage);
+            updatePage(currentPage);
         }
     });
-    $("#nextPageBtn").click(function() {
+
+    $("#nextPageBtn").click(function () {
         currentPage++;
-        window.history.pushState({}, '', `?page=${currentPage}&only_depo=${depoFilterActive}`);
-        loadPage(currentPage);
+        updatePage(currentPage);
     });
+}
 
 
-    loadPage(getPageFromUrl());
-});
 
-$(document).ready(function() {
-    var depoFilterActive = false;
 
-    $('#depoToggle').change(function() {
-        depoFilterActive = $(this).prop('checked'); // Toggle switch state
+function displayPage(data, page) {
+    const itemsPerPage = 10;
+    const start = (page - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
 
-        // Tablodaki tüm satırları seç
-        $('#stokTable tbody tr').each(function(index) {
-            if (index !== 0) { // Başlık satırını hariç tut
-                var adetCell = $(this).find('td:nth-child(6)'); // Adet sütunu (6. sütun) bul
-
-                // Adet değerini kontrol et
-                var adetValue = adetCell.text().trim();
-                var adetValid = adetValue !== '' && parseInt(adetValue) >= 1;
-
-                if (depoFilterActive) {
-                    if (adetValid) {
-                        $(this).show(); // Adeti 1 ve daha fazla olan satırları göster
-                    } else {
-                        $(this).hide(); // Adeti olmayan veya 0 olan satırları gizle
-                    }
-                } else {
-                    $(this).show(); // Filtre kapalıysa tüm satırları göster
-                }
-            }
-        });
-    });
-
-    function searchTable() {
-        let input = $("#searchInput").val().toUpperCase();
-        let table = $("#stokTable");
-        let tr = table.find("tr");
-
-        for (let i = 1; i < tr.length; i++) {
-            $(tr[i]).hide();
-            let td = $(tr[i]).find("td");
-            for (let j = 0; j < td.length; j++) {
-                if (td[j] && $(td[j]).text().toUpperCase().indexOf(input) > -1) {
-                    $(tr[i]).show();
-                    break;
-                }
-            }
-        }
+    if (!data || data.length === 0) {
+        console.log('No data to display.');
+        $("#stokTable tbody").empty();
+        $("#stokTable tbody").append('<tr><td colspan="8">Başka stok bulunamadı.</td></tr>');
+        return;
     }
 
-    $("#searchInput").on("keyup", searchTable);
+    $("#stokTable tbody").empty();
+    data.forEach(function (stok) {
+        $("#stokTable tbody").append(generateTableRow(stok));
+    });
 
-    $('.edit-btn').click(function() {
-        var stokId = $(this).attr('data-stok-id');
-        $.ajax({
-            url: '/get_stock/' + stokId,
-            type: 'GET',
-            success: function(data) {
-                $('#editForm').css('display', 'block');
-                var formContent = $('#editFormContent');
-                formContent.empty();
-                formContent.append('<input type="hidden" id="stokId" name="stokId" value="' + stokId + '">');
-                Object.keys(data).forEach(function(key) {
-                    if (key !== 'OLIMPIA_KOD') {
-                        var value = data[key] !== null ? data[key] : '';
-                        var inputField = '<div class="form-field">' +
-                            '<label for="' + key + '">' + key + '</label>' +
-                            '<input type="text" id="' + key + '" name="' + key + '" value="' + value + '">' +
-                            '</div>';
-                        formContent.append(inputField);
-                    }
-                });
-            },
-            error: function(err) {
-                console.error('Hata:', err);
+    attachEventHandlers();
+    $("#currentPage").text(page);
+}
+function generateTableRow(stok) {
+    let renkFiyatListesiHtml = '';
+    if (Array.isArray(stok.colors_data)) {
+        stok.colors_data.forEach(function (color) {
+            renkFiyatListesiHtml += `<span class="renkFiyatItem" data-color="${color.renk_adi}" data-original-price="${parseFloat(color.fiyat).toFixed(2)}">
+                                         ${color.renk_adi}: <span class="fiyat">${parseFloat(color.fiyat).toFixed(2)}</span><br>
+                                     </span>`;
+        });
+    }
+
+    return `<tr>
+        <td id="operations">
+            <button class="edit-btn" data-stok-id="${stok.OLIMPIA_KOD}">Detay</button>
+            <button class="add-purchase-btn" data-stok-id="${stok.OLIMPIA_KOD}">Alım Ekle</button>
+            <button class="add-sale-btn" data-stok-id="${stok.OLIMPIA_KOD}">Satış Ekle</button>
+        </td>
+        <td>${stok.OLIMPIA_KOD}</td>
+        <td>${stok.STOK_ADI || ''}</td>
+        <td>${stok.MODEL || ''}</td>
+        <td>${stok.OZELLIK || ''}</td>
+        <td>${stok.ADET || ''}</td>
+        <td>${renkFiyatListesiHtml}</td>
+        <td>
+            <input type="number" class="iskonto-input" min="0" step="1" onkeypress="checkEnter(event)" placeholder="İndirim oranını girin. (%)">
+        </td>
+    </tr>`;
+}
+
+
+
+
+function loadDefaultData(page = currentPage) {
+    $.ajax({
+        url: `/get_stocks_paginated?page=${page}`,
+        type: 'GET',
+        success: function (response) {
+
+            if (Array.isArray(response)) {
+                displayPage(response, page);  // Directly pass the array of stocks
+            } else {
+                console.error('Unexpected response structure:', response);
+                displayPage([], page); // Fallback to an empty array to avoid undefined
             }
-        });
+        },
+        error: function (err) {
+            console.error('Error loading default data:', err);
+        }
     });
+}
+function searchAcrossData(query) {
+    currentQuery = query.trim();
 
-    $('.add-purchase-btn').click(function() {
-        var stokId = $(this).attr('data-stok-id');
-        $('#purchaseOlimpiaKod').val(stokId);
-        $('#purchaseForm').css('display', 'block');
-        loadColors();
-    });
-
-    $('.close').click(function() {
-        $('#editForm').css('display', 'none');
-        $('#addStockForm').css('display', 'none');
-        $('#purchaseForm').css('display', 'none');
-    });
-
-    document.querySelectorAll('.edit-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const stokId = this.getAttribute('data-stok-id');
-            fetch(`/get_purchases/${stokId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        console.log(data.error);
-                    } else {
-                        const purchaseList = document.getElementById('purchaseList');
-                        purchaseList.innerHTML = ''; // Clear previous list
-                        data.forEach(purchase => {
-                            const listItem = document.createElement('li');
-                            listItem.textContent = `Tarih: ${purchase.ALIM_TARIHI}, Adet: ${purchase.ADET}, Fiyat: ${purchase.FIYAT}, Renk: ${purchase.renk_adi}`;
-                            purchaseList.appendChild(listItem);
-                        });
-                        document.getElementById('purchaseDetails').style.display = 'block';
-                    }
-                });
-        });
-    });
-});
-
-// Formu gönderme işlemi
-function submitForm() {
-    var formData = $('#editFormContent').serializeArray();
-    var stokId = $('#stokId').val(); // Hidden input alanından stokId'yi al
-    var currentPage = parseInt($("#currentPage").text()); // Get the current page
+    if (currentQuery === '') {
+        currentPage = 1;
+        loadDefaultData(); // Load default data when search is cleared
+        return;
+    }
 
     $.ajax({
-        url: '/update_stock/' + stokId,
-        type: 'PUT',
-        data: formData,
-        cache: false,  // Disable caching
-        contentType: 'application/x-www-form-urlencoded',
-        success: function(response) {
-            alert(response.message);
-            $('#editForm').css('display', 'none');
-            // Reload the page to reflect updated data, staying on the current page
-            window.location.href = `?page=${currentPage}`;
+        url: `/search?query=${encodeURIComponent(currentQuery)}`,
+        type: 'GET',
+        success: function (response) {
+            if (Array.isArray(response)) {
+                displayPage(response, 1);
+            } else {
+                console.error('Unexpected search response structure:', response);
+                displayPage([], 1);
+            }
         },
-        error: function(err) {
-            console.error('Error:', err);
+        error: function (err) {
+            console.error('Search error:', err);
         }
     });
 }
 
 
+function attachGlobalEventHandlers() {
+    $("#searchInput").on('input', function () {
+        searchAcrossData($(this).val());
+    });
+
+    $(document).on('click', '.close', function () {
+        $(this).closest(".modal").hide();
+    });
+
+    window.onclick = function (event) {
+        if ($(event.target).hasClass('modal')) {
+            $(event.target).hide();
+        }
+    };
+}
+
+function attachEventHandlers() {
+    $('.edit-btn').off('click').on('click', function () {
+        const stokId = $(this).data('stok-id');
+        editStock(stokId);
+    });
+
+    $('.add-purchase-btn').off('click').on('click', function () {
+        const stokId = $(this).data('stok-id');
+        $('#purchaseOlimpiaKod').val(stokId);
+        const olimpiaKod = $('#purchaseOlimpiaKod').val();
+        $('#purchaseForm').show();
+        loadColors();
+        loadColorsWithPrices(olimpiaKod);
+    });
+
+    $('.add-sale-btn').off('click').on('click', function () {
+        const stokId = $(this).data('stok-id');
+        $('#saleOlimpiaKod').val(stokId);
+        const olimpiaKod = $('#saleOlimpiaKod').val();
+        $('#saleForm').show();
+        loadColorsSale();
+        loadColorsWithPricesForSale(olimpiaKod);
+
+    });
+}
+function syncPriceInputWithDropdown() {
+    const selectedPrice = $('#priceDropdown').val();
+    $('#purchaseFiyat').val(selectedPrice);
+}
+function loadColorsWithPrices(olimpia_kod) {
+    $.ajax({
+        url: `/get_colors/${olimpia_kod}`,
+        type: 'GET',
+        success: function (data) {
+            const priceDropdown = $('#priceDropdown');
+            priceDropdown.empty();
+
+            // Check if data exists and has a length greater than 0
+            if (data && data.length > 0) {
+                data.forEach(function (colorData) {
+                    const option = `<option value="${colorData.fiyat}">${colorData.renk_adi}: ${colorData.fiyat}</option>`;
+                    priceDropdown.append(option);
+                });
+            } else {
+                priceDropdown.append('<option>Renk fiyat bilgisi bulunamadı.</option>');
+            }
+        },
+        error: function (err) {
+            console.error('Error loading colors with prices:', err);
+        }
+    });
+}
+
+function loadColorsWithPricesForSale(olimpia_kod) {
+    $.ajax({
+        url: `/get_colors/${olimpia_kod}`,
+        type: 'GET',
+        success: function (data) {
+            const saleDropdown = $('#priceDropdownForSale'); // Corrected variable name
+            saleDropdown.empty(); // Use the same variable name here
+
+
+            // Check if data exists and has a length greater than 0
+            if (data && data.length > 0) {
+                data.forEach(function (colorData) {
+                    const option = `<option value="${colorData.fiyat}">${colorData.renk_adi}: ${colorData.fiyat}</option>`;
+                    saleDropdown.append(option); // Append options to the sale dropdown
+                });
+            } else {
+                saleDropdown.append('<option>Renk fiyat bilgisi bulunamadı.</option>');
+            }
+        },
+        error: function (err) {
+            console.error('Error loading colors with prices:', err);
+        }
+    });
+}
+
+
+function editStock(stokId) {
+    $.ajax({
+        url: `/get_stock/${stokId}`,
+        type: 'GET',
+        success: function (data) {
+            displayEditForm(data, stokId);
+        },
+        error: function (err) {
+            console.error('Error:', err);
+        }
+    });
+}
+
+function displayEditForm(data, stokId) {
+    $('#editForm').show();
+    const formContent = $('#editFormContent').empty();
+    formContent.append(`<input type="hidden" id="stokId" name="stokId" value="${stokId}">`);
+
+    Object.keys(data.stock).forEach(function (key) {
+        if (key !== 'OLIMPIA_KOD') {
+            formContent.append(generateInputField(key, data.stock[key]));
+        }
+    });
+
+    displayDetails(data.purchases, 'purchaseList', 'purchaseDetails');
+    displayDetails(data.sales, 'saleList', 'saleDetails');
+}
+
+function generateInputField(key, value) {
+    return `<div class="form-field">
+        <label for="${key}">${key}</label>
+        <input type="text" id="${key}" name="${key}" value="${value || ''}">
+    </div>`;
+}
+
+function displayDetails(details, listId, detailsId) {
+    const list = $(`#${listId}`).empty();
+    details.forEach(function (detail) {
+        list.append(`<li>${generateDetailText(detail)}</li>`);
+    });
+    $(`#${detailsId}`).show();
+}
+
+function generateDetailText(detail) {
+    return `Tarih: ${detail.ALIM_TARIHI || detail.SATIS_TARIHI}, Adet: ${detail.ADET}, Fiyat: ${detail.FIYAT}, Renk: ${detail.renk_adi}`;
+}
+
+function handlePageLoad() {
+    const urlParams = new URLSearchParams(window.location.search);
+    currentPage = parseInt(urlParams.get('page')) || 1;
+    currentQuery = urlParams.get('query') || '';
+
+    loadPage(currentPage);
+}
+
+function getPageFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return parseInt(urlParams.get('page')) || 1;
+}
+
+function loadPage(page) {
+    const depoFilterActive = $('#depoToggle').is(':checked');
+    const queryParam = currentQuery ? `&query=${encodeURIComponent(currentQuery)}` : '';
+
+    $.ajax({
+        url: `/get_stocks_paginated?page=${page}&only_depo=${depoFilterActive}${queryParam}`,
+        type: 'GET',
+        cache: false,
+        success: function (data) {
+            displayPage(data, page);
+        },
+        error: function (err) {
+            console.error('Error loading page:', err);
+        }
+    });
+}
+function submitSaleForm() {
+    // Get the form data
+    const formData = {
+        OLIMPIA_KOD: $('#saleOlimpiaKod').val(),
+        SATIS_TARIHI: $('#saleDate').val(),
+        ADET: parseInt($('#saleAdet').val(), 10),
+        RENK: $('#RENKSALE').val(),
+        FIYAT: parseFloat($('#saleFiyat').val())
+    };
+
+    // Validate the form data
+    if (!formData.OLIMPIA_KOD || !formData.SATIS_TARIHI || isNaN(formData.ADET) || !formData.RENK || isNaN(formData.FIYAT)) {
+        alert('Lütfen tüm alanları doğru şekilde doldurun.');
+        return;
+    }
+
+    // Send the data to the server
+    $.ajax({
+        url: '/add_sale',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        success: function(response) {
+            alert(response.message);
+            $('#saleForm').hide(); // Hide the form after submission
+            window.location.reload(); // Reload the page to reflect changes
+        },
+        error: function(err) {
+            console.error('Error submitting sale form:', err);
+            alert(`Error submitting sale form: ${err.responseText || 'Unknown error occurred'}`);
+        }
+    });
+}
+
+
+function submitPurchaseForm() {
+    // Get the form data
+    const formData = {
+        OLIMPIA_KOD: $('#purchaseOlimpiaKod').val(),
+        ALIM_TARIHI: $('#purchaseDate').val(),
+        ADET: parseInt($('#purchaseAdet').val(), 10),
+        RENK: $('#RENK').val(),
+        FIYAT: parseFloat($('#purchaseFiyat').val())
+    };
+
+    // Validate the form data
+    if (!formData.OLIMPIA_KOD || !formData.ALIM_TARIHI || isNaN(formData.ADET) || !formData.RENK || isNaN(formData.FIYAT)) {
+        alert('Lütfen tüm alanları doğru şekilde doldurun.');
+        return;
+    }
+
+    // Send the data to the server
+    $.ajax({
+        url: '/add_purchase',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        success: function(response) {
+            alert(response.message);
+            $('#purchaseForm').hide(); // Hide the form after submission
+            window.location.reload(); // Reload the page to reflect changes
+        },
+        error: function(err) {
+            console.error('Error submitting purchase form:', err);
+            alert(`Error submitting purchase form: ${err.responseText || 'Unknown error occurred'}`);
+        }
+    });
+}
+
+function handleDepoFilterToggle(currentPage) {
+    $('#depoToggle').change(function () {
+        window.history.pushState({}, '', `?page=${currentPage}&only_depo=${$(this).prop('checked')}`);
+        loadPage(currentPage);
+    });
+}
+
+function handlePaginationButtons() {
+    $("#prevPageBtn").click(function () {
+        if (currentPage > 1) {
+            currentPage--; // Decrement the current page
+            updatePage(currentPage);
+        }
+    });
+
+    $("#nextPageBtn").click(function () {
+        currentPage++; // Increment the current page
+        updatePage(currentPage);
+    });
+}
+
+function updatePage(page) {
+    const depoFilterActive = $('#depoToggle').is(':checked');
+    window.history.pushState({}, '', `?page=${page}&only_depo=${depoFilterActive}`);
+    loadPage(page);
+}
+
+function checkEnter(event) {
+    if (event.keyCode === 13) {
+        applyDiscount($(event.target).closest('tr'));
+    }
+}
+function applyDiscount(row) {
+    // Get the discount rate from the input field
+    const discountInput = row.find('.iskonto-input').val();
+    let discountRate = parseFloat(discountInput);
+
+    // Check if the discount rate is valid or if the input is empty
+    if (discountInput === '' || isNaN(discountRate) || discountRate < 0) {
+        // If input is empty or invalid, return original prices
+        row.find('.renkFiyatItem').each(function () {
+            const fiyatSpan = $(this).find('.fiyat');
+            const originalPrice = parseFloat($(this).data('originalPrice'));
+
+            if (isNaN(originalPrice)) {
+                alert("Geçersiz fiyat değeri. Lütfen veriyi kontrol edin.");
+                return;
+            }
+
+            // Display original price
+            fiyatSpan.text(originalPrice.toFixed(2));
+        });
+    } else {
+        // Apply discount if the rate is valid
+        row.find('.renkFiyatItem').each(function () {
+            const fiyatSpan = $(this).find('.fiyat');
+            const originalPrice = parseFloat($(this).data('originalPrice'));
+
+            if (isNaN(originalPrice)) {
+                alert("Geçersiz fiyat değeri. Lütfen veriyi kontrol edin.");
+                return;
+            }
+
+            // Calculate discounted price
+            const discountedPrice = Math.max(originalPrice - (originalPrice * (discountRate / 100)), 0.00001);
+
+            // Update the price display
+            fiyatSpan.text(discountedPrice.toFixed(2));
+        });
+    }
+}
+
+function calculateDiscount(event) {
+    if (event.keyCode !== 13) {
+        return;
+    }
+    // Get the row where the input was triggered
+    const row = $(event.target).closest('.modal-content');
+
+    // Get the discount rate from the input field
+    const discountInput = row.find('#purchaseIskonto').val();
+    let discountRate = parseFloat(discountInput);
+
+    // Check if the discount rate is valid or if the input is empty
+    if (discountInput === '' || isNaN(discountRate) || discountRate < 0) {
+        // If input is empty or invalid, return original price
+        const originalPrice = parseFloat(row.find('#priceDropdown').val() || row.find('#purchaseFiyat').val());
+        if (isNaN(originalPrice)) {
+            alert("Fiyat kısmına doğru değeri girdiğinizden emin olun..");
+            return;
+        }
+        row.find('#purchaseFiyat').val(originalPrice.toFixed(2));
+        row.find('#discountedPrice').text(originalPrice.toFixed(2));
+    } else {
+        // Get the original price from the purchaseFiyat or priceDropdown input field
+        const originalPrice = parseFloat(row.find('#purchaseFiyat').val());
+        if (isNaN(originalPrice)) {
+            alert("Fiyat kısmına doğru değeri girdiğinizden emin olun..");
+            return;
+        }
+
+        // Calculate discounted price
+        const discountedPrice = Math.max(originalPrice - (originalPrice * (discountRate / 100)), 0.00001);
+
+        // Update the price display
+        row.find('#purchaseFiyat').val(discountedPrice.toFixed(2));
+        row.find('#discountedPrice').text(discountedPrice.toFixed(2));
+    }
+}
+
+function syncSalePriceInputWithDropdown() {
+    const selectedPrice = $('#priceDropdownForSale').val();
+    $('#saleFiyat').val(selectedPrice);
+}
+
+function calculateSaleDiscount(event) {
+    if (event.keyCode !== 13) {
+        return;
+    }
+    // Get the row where the input was triggered
+    const row = $(event.target).closest('.modal-content');
+
+    // Get the discount rate from the input field
+    const discountInput = row.find('#saleIskonto').val();
+    let discountRate = parseFloat(discountInput);
+
+    // Check if the discount rate is valid or if the input is empty
+    if (discountInput === '' || isNaN(discountRate) || discountRate < 0) {
+        // If input is empty or invalid, return original price
+        const originalPrice = parseFloat(row.find('#priceDropdownSale').val() || row.find('#saleFiyat').val());
+        if (isNaN(originalPrice)) {
+            alert("Fiyat kısmına doğru değeri girdiğinizden emin olun.");
+            return;
+        }
+        row.find('#saleFiyat').val(originalPrice.toFixed(2));
+        row.find('#saleDiscountedPrice').text(originalPrice.toFixed(2));
+    } else {
+        // Get the original price from the saleFiyat or priceDropdownSale input field
+        const originalPrice = parseFloat(row.find('#saleFiyat').val());
+        if (isNaN(originalPrice)) {
+            alert("Fiyat kısmına doğru değeri girdiğinizden emin olun.");
+            return;
+        }
+
+        // Calculate discounted price
+        const discountedPrice = Math.max(originalPrice - (originalPrice * (discountRate / 100)), 0.00001);
+
+        // Update the price display
+        row.find('#saleFiyat').val(discountedPrice.toFixed(2));
+        row.find('#saleDiscountedPrice').text(discountedPrice.toFixed(2));
+    }
+}
+
+
+// The following functions are kept as is to match the HTML:
 function openAddForm() {
-    $('#addStockForm').css('display', 'block');
+    $('#addStockForm').show();
     $('#addStockContent').empty(); // Clear previous form content
 
-    // Append the form fields
     $('#addStockContent').append(`
         <div class="form-field">
             <label for="OLIMPIA_KOD">OLIMPIA KOD <span style="color:red;">*</span></label>
@@ -418,9 +618,7 @@ function openAddForm() {
         </div>
         <div class="form-field-renk">
             <label for="RENK">RENK</label>
-            <select id="RENK" name="RENK">
-                <!-- Mevcut renkler buraya yüklenecek -->
-            </select>
+            <select id="RENK" name="RENK"></select>
             <input type="text" id="newColor" placeholder="Yeni Renk Ekle">
             <button type="button" onclick="addNewColor()">Renk Ekle</button>
         </div>
@@ -430,98 +628,15 @@ function openAddForm() {
         </div>
     `);
 
-    // Append the save button
     $('#addStockContent').append(`<button type="button" class="save-btn" onclick="addStock()">KAYDET</button>`);
 
-    loadColors(); // Load the colors into the RENK dropdown
-}
-
-function loadColors() {
-    $.ajax({
-        url: '/get_colors', // Renkleri getiren API endpoint
-        type: 'GET',
-        success: function(data) {
-            var renkSelect = $('#RENK');
-            renkSelect.empty(); // Mevcut seçenekleri temizle
-            data.forEach(function(renk) {
-                renkSelect.append(new Option(renk, renk));
-
-            });
-        },
-        error: function(err) {
-            console.error('Hata:', err);
-        }
-    });
-}
-
-function loadColorsSale() {
-    $.ajax({
-        url: '/get_colors', // Renkleri getiren API endpoint
-        type: 'GET',
-        success: function(data) {
-            var renkSelect = $('#RENKSALE');
-            renkSelect.empty(); // Mevcut seçenekleri temizle
-            data.forEach(function(renk) {
-                renkSelect.append(new Option(renk, renk));
-            });
-        },
-        error: function(err) {
-            console.error('Hata:', err);
-        }
-    });
-}
-
-function addNewColor() {
-    var newColor = $('#newColor').val();
-    if (newColor) {
-        $.ajax({
-            url: '/add_color',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ color: newColor }),
-            success: function(response) {
-                var renkSelect = $('#RENK');
-                renkSelect.append(new Option(newColor, newColor));
-                $('#newColor').val(''); // Input alanını temizle
-                alert(response.message);
-            },
-            error: function(err) {
-                console.error('Hata:', err);
-                alert('Renk eklenirken bir hata oluştu.');
-            }
-        });
-    }
-}
-
-function addNewColorSale() {
-    var newColor = $('#newColorSale').val();
-    if (newColor) {
-        $.ajax({
-            url: '/add_color',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ color: newColor }),
-            success: function(response) {
-                var renkSelect = $('#RENKSALE');
-                renkSelect.append(new Option(newColor, newColor));
-                $('#newColor').val(''); // Input alanını temizle
-                alert(response.message);
-            },
-            error: function(err) {
-                console.error('Hata:', err);
-                alert('Renk eklenirken bir hata oluştu.');
-            }
-        });
-    }
+    loadColors();
 }
 
 function addStock() {
-    // Validate the form first
-    if (!validateAddStockForm()) {
-        return;  // If validation fails, don't proceed with the submission
-    }
+    if (!validateAddStockForm()) return;
 
-    var formData = {
+    const formData = {
         OLIMPIA_KOD: $('#OLIMPIA_KOD').val(),
         STOK_ADI: $('#STOK_ADI').val(),
         UY: $('#UY').val(),
@@ -541,14 +656,13 @@ function addStock() {
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(formData),
-        success: function(response) {
+        success: function (response) {
             alert(response.message);
-            // Refresh the page after a successful addition
             window.location.reload();
         },
-        error: function(err) {
+        error: function (err) {
             console.error('Error:', err);
-            alert('An error occurred while adding the stock.');
+            alert('Stok eklerken bir hata oldu. Doğru değerleri girdiğinize emin olun.');
         }
     });
 }
@@ -556,11 +670,9 @@ function addStock() {
 function validateAddStockForm() {
     let isValid = true;
 
-    // Clear previous error messages
     $('.error-message').remove();
 
-    // Check required fields
-    $('#addStockContent input[required]').each(function() {
+    $('#addStockContent input[required]').each(function () {
         if ($(this).val().trim() === '') {
             isValid = false;
             const fieldName = $(this).attr('id').replace('_', ' ').toUpperCase();
@@ -570,206 +682,66 @@ function validateAddStockForm() {
 
     return isValid;
 }
-
-function submitPurchaseForm() {
-    if (!validateDate('purchaseDate')) return;
-
-    var formData = $('#purchaseFormContent').serialize();
+function loadColors() {
     $.ajax({
-        url: '/add_purchase',
-        type: 'POST',
-        data: formData,
-        contentType: 'application/x-www-form-urlencoded',
-        success: function(response) {
-            alert(response.message);
-            $('#purchaseForm').css('display', 'none');
-            location.reload();
+        url: '/get_colors',
+        type: 'GET',
+        success: function (colors) {
+            const renkSelect = $('#RENK');
+            renkSelect.empty();
+            if (colors && colors.length > 0) {
+                colors.forEach(function (color) {
+                    renkSelect.append(`<option value="${color}">${color}</option>`);
+                });
+            } else {
+                renkSelect.append('<option>Renk bulunamadı.</option>');
+            }
         },
-        error: function(err) {
-            console.error('Error:', err);
-            alert("Lütfen tarihi doğru girdiğinizden emin olun.")
+        error: function (err) {
+            console.error('Error loading colors:', err);
         }
     });
 }
 
-function submitSaleForm() {
-    if (!validateDate('saleDate')) return;
 
-    var formData = $('#saleFormContent').serialize();
+function loadColorsSale() {
     $.ajax({
-        url: '/add_sale',
-        type: 'POST',
-        data: formData,
-        contentType: 'application/x-www-form-urlencoded',
-        success: function(response) {
-            alert(response.message);
-            $('#saleForm').css('display', 'none');
-            location.reload();
+        url: '/get_colors',
+        type: 'GET',
+        success: function (colors) {
+            const renkSelect = $('#RENKSALE');
+            renkSelect.empty();
+            colors.forEach(function (color) {
+                renkSelect.append(`<option value="${color}">${color}</option>`);
+            });
         },
-        error: function(err) {
-            console.error('Error:', err);
-            alert("Lütfen tarihi doğru girdiğinizden emin olun.")
+        error: function (err) {
+            console.error('Error loading colors:', err);
         }
     });
 }
+function addNewColor() {
+    const newColor = $('#newColor').val().trim();
 
-// Ensure that the sale form modal opens correctly
-function openSaleModal(olimpiaKod) {
-    var modal = document.getElementById("saleForm");
-    var span = modal.querySelector(".close");
-    var purchaseOlimpiaKod = modal.querySelector("#saleOlimpiaKod");
-
-    // Set the OLIMPIA_KOD in the hidden input field
-    if (purchaseOlimpiaKod) {
-        purchaseOlimpiaKod.value = olimpiaKod;
-    }
-
-    // Display the modal
-    modal.style.display = "block";
-
-    // Close the modal when the X is clicked
-    span.onclick = function () {
-        modal.style.display = "none";
-    }
-
-    // Close the modal when clicking outside of it
-    window.onclick = function (event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    }
-}
-
-// Attach event listeners to the Satış Ekle buttons
-document.querySelectorAll(".add-sale-btn").forEach(button => {
-    button.addEventListener("click", function(event) {
-        var olimpiaKod = event.currentTarget.getAttribute("data-stok-id");
-        openSaleModal(olimpiaKod); // Open the sale modal
-    });
-});
-
-// Modal close functionality
-document.querySelectorAll(".close").forEach(button => {
-    button.addEventListener("click", function() {
-        var modal = this.closest(".modal");
-        modal.style.display = "none";
-    });
-});
-
-// Close modal when clicking outside of it
-window.onclick = function(event) {
-    if (event.target.classList.contains('modal')) {
-        event.target.style.display = "none";
-    }
-}
-
-// İskonto uygulama fonksiyonu
-
-function applyDiscount(row) {
-    var iskontoInput = row.querySelector('.iskonto-input');
-    var iskontoMiktari = parseFloat(iskontoInput.value);
-
-    if (isNaN(iskontoMiktari) || iskontoMiktari < 0) {
-        alert("Doğru iskonto miktarı girdiğinize emin olun.");
+    if (!newColor) {
+        alert('Lütfen eklemek istediğiniz rengi girin.');
         return;
     }
 
-    var renkFiyatListesi = row.querySelectorAll('.renkFiyatItem');
-    renkFiyatListesi.forEach(function(item) {
-        var fiyatSpan = item.querySelector('.fiyat');
-
-        if (fiyatSpan) {
-            // If this is the first time applying a discount, store the original price
-            if (!item.dataset.originalPrice) {
-                item.dataset.originalPrice = fiyatSpan.textContent;
-            }
-
-            var orijinalFiyat = parseFloat(item.dataset.originalPrice);
-
-            if (isNaN(orijinalFiyat)) {
-                alert("Geçersiz fiyat değeri. Lütfen veriyi kontrol edin.");
-                return;
-            }
-
-            var indirimliFiyat = orijinalFiyat - (orijinalFiyat * (iskontoMiktari / 100));
-            indirimliFiyat = Math.max(indirimliFiyat, 0.00001); // Prevents negative or zero prices
-
-            fiyatSpan.textContent = indirimliFiyat.toFixed(2);
+    // Send the new color to the server
+    $.ajax({
+        url: '/add_color',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ color: newColor }),
+        success: function(response) {
+            alert(response.message);
+            $('#newColor').val(''); // Clear the input field
+            loadColors(); // Reload the colors dropdown to include the new color
+        },
+        error: function(err) {
+            console.error('Error adding new color:', err);
+            alert('Renk eklerken bir hata oluştu.');
         }
     });
-}
-
-// Enter tuşuna basıldığında kontrol fonksiyonu
-function checkEnter(event) {
-    if (event.keyCode === 13) { // Enter tuşuna basıldığında
-        var row = event.target.closest('tr'); // Event'in gerçekleştiği satırı bulalım
-        if (row) {
-            applyDiscount(row); // Iskonto miktarını sadece ilgili satırdaki fiyatlara uygula
-        }
-    }
-}
-
-function calculateDiscount(event) {
-    // FOR ALIŞ EKLE PART
-    if (event.keyCode === 13) { // Check if Enter key is pressed
-        var originalPriceInput = document.getElementById('purchaseFiyat');
-        var discountRateInput = event.target; // Get the specific input that triggered the event
-        var discountedPriceSpan = document.getElementById('discountedPrice');
-
-        var originalPrice = parseFloat(originalPriceInput.value);
-        var discountRate = parseFloat(discountRateInput.value);
-
-        if (isNaN(discountRate) || discountRate < 0) {
-            alert("Doğru iskonto miktarı girdiğinize emin olun.");
-            discountedPriceSpan.textContent = ''; // Clear the discounted price
-            return;
-        }
-
-        if (!isNaN(originalPrice)) {
-            var discountedPrice = originalPrice - (originalPrice * (discountRate / 100));
-            // Ensure the discounted price does not go below a small positive threshold
-            discountedPrice = discountedPrice <= 0 ? 0.00001 : discountedPrice;
-            discountedPriceSpan.textContent = 'İskontolu Fiyat: ' + discountedPrice.toFixed(2) + ' TL';
-        } else {
-            discountedPriceSpan.textContent = '';
-        }
-    }
-}
-
-function calculateSaleDiscount(event) {
-    if (event.keyCode === 13) { // Check if Enter key is pressed
-        var saleFormContent = event.target.closest('#saleFormContent'); // Find the closest form content
-        var originalPriceInput = saleFormContent.querySelector('#saleFiyat');
-        var discountRateInput = event.target; // Get the specific input that triggered the event
-        var discountedPriceSpan = saleFormContent.querySelector('#saleDiscountedPrice');
-
-        var originalPrice = parseFloat(originalPriceInput.value);
-        var discountRate = parseFloat(discountRateInput.value);
-
-        if (isNaN(discountRate) || discountRate < 0) {
-            alert("Doğru iskonto miktarı girdiğinize emin olun.");
-            discountedPriceSpan.textContent = ''; // Clear the discounted price
-            return;
-        }
-
-        if (!isNaN(originalPrice)) {
-            var discountedPrice = originalPrice - (originalPrice * (discountRate / 100));
-            // Ensure the discounted price does not go below a small positive threshold
-            discountedPrice = discountedPrice <= 0 ? 0.00001 : discountedPrice;
-            discountedPriceSpan.textContent = 'İskontolu Fiyat: ' + discountedPrice.toFixed(2) + ' TL';
-        } else {
-            discountedPriceSpan.textContent = '';
-        }
-    }
-}
-
-function validateDate(inputId) {
-    var dateValue = $(`#${inputId}`).val();
-    // Simple date validation for dd.mm.yyyy format
-    var datePattern = /^\d{2}\.\d{2}\.\d{4}$/;
-    if (!datePattern.test(dateValue)) {
-        alert("Lütfen tarihi gün/ay/yıl formatında girin.");
-        return false;
-    }
-    return true;
 }
