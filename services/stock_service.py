@@ -1,6 +1,6 @@
 from database.queries import (
     get_all_stocks, get_colors_for_stock, add_stock,
-    update_stock, delete_stock, get_stock_by_id, get_stock_data_paginated, search_across_all_data
+    update_stock, delete_stock, get_stock_by_id, get_stock_data_paginated, search_across_all_data, get_colors_for_stock
 )
 from database.queries import get_stock_data_paginated as get_paginated_stocks
 import sqlite3
@@ -46,5 +46,8 @@ def get_stock_details(db_path, olimpia_kod):
     stock = get_stock_by_id(db_path, olimpia_kod)
     return dict(stock) if stock else None
 
-def search_across_datas(db_path, query, page, page_size):
-    return search_across_all_data(db_path, query, page, page_size)
+def search_across_datas(db_path, query ):
+    return search_across_all_data(db_path, query)
+
+def get_colors_for_stock_id(db_path, olimpia_kod):
+    return get_colors_for_stock(db_path, olimpia_kod)
