@@ -3,7 +3,7 @@ from config import config
 from database.queries import get_stock_paginated_filtered
 from services.stock_service import (
     add_new_stock, update_existing_stock,
-    delete_existing_stock, get_stock_details, get_stock_data_paginated, get_stock_paginated, search_across_datas
+    delete_existing_stock, get_stock_details, get_stock_data_paginated, get_stock_paginated, search_across_datas, get_colors_for_stock_id
 )
 from services.product_service import add_new_product
 from services.color_service import get_colors, add_new_color
@@ -41,17 +41,18 @@ def get_stocks_paginated():
     page = request.args.get('page', 1, type=int)
     page_size = request.args.get('page_size', 10, type=int)
     only_depo = request.args.get('only_depo', 'false').lower() == 'true'
-    data = get_stock_paginated_filtered(config.DB_PATH, page, page_size, only_depo)
+    search_query = request.args.get('query', '', type=str)
+
+    data = get_stock_paginated_filtered(config.DB_PATH, page, page_size, only_depo, search_query)
     return jsonify(data)
+
 
 @app.route('/search', methods=['GET'])
 def search():
     try:
         query = request.args.get('query', '', type=str)
-        page = request.args.get('page', 1, type=int)
-        page_size = request.args.get('page_size', 10, type=int)
 
-        data = search_across_datas(config.DB_PATH, query, page, page_size)
+        data = search_across_datas(config.DB_PATH, query )
         return jsonify(data), 200
     except Exception as err:
         return jsonify({'error': str(err)}), 500
@@ -147,11 +148,16 @@ def add_color_route():
 @app.route('/add_purchase', methods=['POST'])
 def add_purchase_route():
     try:
-        data = request.form.to_dict()
+        data = request.get_json()
+
         if 'RENK' in data:
             data['renk_adi'] = data.pop('RENK')
-        if 'Tarih' in data:
-            data['ALIM_TARIHI'] = data.pop('Tarih')
+        if 'ALIM_TARIHI' in data:
+            data['ALIM_TARIHI'] = data.pop('ALIM_TARIHI')
+
+        if not data:
+            return jsonify({"error": "Satış verisi yok."}), 400
+
         add_new_purchase(config.DB_PATH, data)
         return jsonify({"message": "Alış eklendi"}), 201
     except Exception as err:
@@ -160,7 +166,7 @@ def add_purchase_route():
 @app.route('/add_sale', methods=['POST'])
 def add_sale_route():
     try:
-        data = request.form.to_dict()
+        data = request.get_json()
         if 'RENK' in data:
             data['renk_adi'] = data.pop('RENK')
         add_new_sale(config.DB_PATH, data)
@@ -179,8 +185,13 @@ def get_purchases(olimpia_kod):
     except Exception as err:
         return jsonify({'error': str(err)}), 500
 
-
-
+@app.route('/get_colors/<string:olimpia_kod>', methods=['GET'])
+def get_colors_for_stock(olimpia_kod):
+    try:
+        colors = get_colors_for_stock_id(config.DB_PATH, olimpia_kod)
+        return jsonify(colors)
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 
 if __name__ == '__main__':
