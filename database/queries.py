@@ -38,7 +38,11 @@ def get_colors_for_stock(db_path, olimpia_kod):
     colors = cursor.fetchall()
     cursor.close()
     connection.close()
-    return colors
+
+    # Convert each row to a dictionary
+    colors_list = [{'renk_adi': row['renk_adi'], 'fiyat': row['fiyat']} for row in colors]
+
+    return colors_list
 
 def add_product(db_path, data):
     connection = get_connection(db_path)
@@ -196,10 +200,20 @@ def add_purchase(db_path, data):
 
     connection = get_connection(db_path)
     cursor = connection.cursor()
-    cursor.execute(f"INSERT INTO alim_bilgisi ({fields}) VALUES ({placeholders})", values)
-    connection.commit()
-    cursor.close()
-    connection.close()
+
+    try:
+        # Debugging: Print the SQL query and values
+        print(f"INSERT INTO alim_bilgisi ({fields}) VALUES ({placeholders})")
+        print(f"Values: {values}")
+
+        cursor.execute(f"INSERT INTO alim_bilgisi ({fields}) VALUES ({placeholders})", values)
+        connection.commit()
+    except sqlite3.Error as e:
+        print(f"SQL Error: {e}")
+        raise e
+    finally:
+        cursor.close()
+        connection.close()
 
 def add_sale(db_path, data):
     fields = ', '.join(data.keys())
@@ -219,7 +233,6 @@ def get_stock_paginated_filtered(db_path, page, page_size, only_depo, search_que
     connection = get_connection(db_path)
     cursor = connection.cursor()
 
-    # Construct SQL query with search condition
     base_query = "SELECT OLIMPIA_KOD, STOK_ADI, MODEL, OZELLIK, ADET FROM STOK WHERE 1=1"
 
     if only_depo:
@@ -227,10 +240,12 @@ def get_stock_paginated_filtered(db_path, page, page_size, only_depo, search_que
 
     if search_query:
         base_query += " AND (STOK_ADI LIKE ? OR MODEL LIKE ? OR OZELLIK LIKE ?)"
-        search_query = f"%{search_query}%"  # Add wildcards for partial matching
-        cursor.execute(base_query + " LIMIT ? OFFSET ?", (search_query, search_query, search_query, page_size, offset))
+        search_query = f"%{search_query}%"
+        query = base_query + " LIMIT ? OFFSET ?"
+        cursor.execute(query, (search_query, search_query, search_query, page_size, offset))
     else:
-        cursor.execute(base_query + " LIMIT ? OFFSET ?", (page_size, offset))
+        query = base_query + " LIMIT ? OFFSET ?"
+        cursor.execute(query, (page_size, offset))
 
     stocks = cursor.fetchall()
     cursor.close()
@@ -245,22 +260,22 @@ def get_stock_paginated_filtered(db_path, page, page_size, only_depo, search_que
 
     return data
 
-def search_across_all_data(db_path, query, page, page_size):
+def search_across_all_data(db_path, query, limit=10, offset=0):
     try:
-        offset = (page - 1) * page_size
         connection = get_connection(db_path)
         cursor = connection.cursor()
 
         search_query = f"%{query}%"
 
-        # Start with a basic query to ensure it works
+        # SQL query with pagination
         sql = '''
-        SELECT OLIMPIA_KOD, STOK_ADI, MODEL, OZELLIK, ADET FROM STOK
+        SELECT OLIMPIA_KOD, STOK_ADI, MODEL, OZELLIK, ADET 
+        FROM STOK
         WHERE OLIMPIA_KOD LIKE ? OR STOK_ADI LIKE ? OR MODEL LIKE ? OR OZELLIK LIKE ?
         LIMIT ? OFFSET ?
         '''
 
-        cursor.execute(sql, (search_query, search_query, search_query, search_query, page_size, offset))
+        cursor.execute(sql, (search_query, search_query, search_query, search_query, limit, offset))
         results = cursor.fetchall()
         cursor.close()
         connection.close()
@@ -273,7 +288,6 @@ def search_across_all_data(db_path, query, page, page_size):
     except Exception as e:
         print(f"Unexpected error: {e}")
         raise e
-
 
 
 
