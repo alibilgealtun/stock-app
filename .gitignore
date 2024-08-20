@@ -162,3 +162,10 @@ cython_debug/
 #.idea/
 /.idea
 /.idea
+/.idea
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/modules.xml
+.idea/stock-app.iml
+.idea/watcherTasks.xml
+.idea/inspectionProfiles/profiles_settings.xml
