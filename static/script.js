@@ -222,7 +222,8 @@ function generateTableRow(stok) {
         <td>${stok.MODEL || ''}</td>
         <td>${stok.OZELLIK || ''}</td>
         <td>${stok.DELIK || ''}</td>
-        <td>${stok.M2 || ''}</td>
+        <td>${stok.EN || ''}</td>
+        <td>${stok.BOY || ''}</td>
         <td>${stok.KONUM || ''}</td>
         <td>${stok.ADET || ''}</td>
         <td>${renkFiyatListesiHtml}</td>
