@@ -20,6 +20,9 @@
     <input type="checkbox" id="depoToggle">
     <label for="depoToggle">Depodakilere Bak</label>
 
+    <input type="checkbox" id="cikmaToggle">
+    <label for="cikmaToggle">Çıkma</label>
+
     <table border="1" id="stokTable">
         <thead>
         <tr>
@@ -28,36 +31,22 @@
             <th>STOK ADI</th>
             <th>MODEL</th>
             <th>ÖZELLİK</th>
+            <th>DELİK-</th>
+            <th>EN</th>
+            <th>BOY</th>
+            <th>KONUM</th>
             <th>TOPLAM ADET</th>
             <th>RENK: FİYAT</th>
             <th>ISKONTO</th>
         </tr>
         </thead>
-        {% for stok in data %}
-        <tr>
-            <td id="operations">
-                <button class="edit-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Detay</button>
-                <button class="add-purchase-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Alım Ekle</button>
-                <button class="add-sale-btn" data-stok-id="{{ stok.OLIMPIA_KOD }}">Satış Ekle</button>
-            </td>
-            <td>{{ stok.OLIMPIA_KOD }}</td>
-            <td>{{ stok.STOK_ADI }}</td>
-            <td>{{ stok.MODEL if stok.MODEL is not none else '' }}</td>
-            <td>{{ stok.OZELLIK if stok.OZELLIK is not none else '' }}</td>
-            <td>{{ stok.ADET if stok.ADET is not none else '' }}</td>
-            <td>{{ renkFiyatListesiHtml|safe }}</td>
-            <td>
-                <input type="number" class="iskonto-input" min="0" step="1" onkeypress="checkEnter(event)" placeholder="İndirim oranını girin. (%)">
-            </td>
-
-        </tr>
-        {% endfor %}
-
-
+        <tbody>
+        <!-- Rows will be dynamically added here -->
+        </tbody>
     </table>
 
 
-    <div id="paginationControls">
+   <!-- <div id="paginationControls">
         <button id="prevPageBtn">Önceki</button>
         <span id="currentPage">1</span>
         <button id="nextPageBtn">Sonraki</button>
@@ -66,13 +55,13 @@
             <input type="number" id="pageInput" min="1">
             <button onclick="changePage()">Git</button>
         </div>
-    </div>
+    </div>-->
 
 
     <div id="editForm" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Stok Bilgi ve Düzenleme Formu</h2>
+            <h2>Stok Bilgi ve Düzenleme Formu </h2>
             <form id="editFormContent">
                 <input type="hidden" id="stokId" name="stokId">
             </form>
