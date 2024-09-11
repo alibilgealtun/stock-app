@@ -1,10 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 from config import config
-from database.queries import get_stock_paginated_filtered
-from services.stock_service import (
-    add_new_stock, update_existing_stock,
-    delete_existing_stock, get_stock_details, get_stock_data_paginated, get_stock_paginated, search_across_datas, get_colors_for_stock_id
-)
+from database.queries import get_stock_paginated_filtered, get_stock_by_id
+from services.stock_service import *
 from services.product_service import add_new_product
 from services.color_service import get_colors, add_new_color
 from services.purchase_service import add_new_purchase, get_purchases_for_stock
@@ -33,17 +30,16 @@ def index():
         return jsonify({'error': str(err)}), 500
 
 
-
-
 @app.route('/get_stocks_paginated')
 @cache.cached(timeout=60, query_string=True)
 def get_stocks_paginated():
     page = request.args.get('page', 1, type=int)
     page_size = request.args.get('page_size', 10, type=int)
     only_depo = request.args.get('only_depo', 'false').lower() == 'true'
+    only_cikma = request.args.get('only_cikma', 'false').lower() == 'true'
     search_query = request.args.get('query', '', type=str)
 
-    data = get_stock_paginated_filtered(config.DB_PATH, page, page_size, only_depo, search_query)
+    data = get_stock_paginated_filtered(config.DB_PATH, page, page_size, only_depo, only_cikma, search_query)
     return jsonify(data)
 
 
@@ -192,6 +188,17 @@ def get_colors_for_stock(olimpia_kod):
         return jsonify(colors)
     except Exception as e:
         return jsonify({'error': str(e)})
+
+
+@app.route('/search_stock', methods=['GET'])
+def search_stock():
+    olimpia_kod = request.args.get('olimpia_kod')
+    stock = get_stock_by_id(config.DB_PATH, olimpia_kod)
+    if stock:
+        return jsonify(stock)
+    else:
+        return jsonify({'error': 'Stock not found'}), 404
+
 
 
 if __name__ == '__main__':
