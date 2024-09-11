@@ -20,7 +20,8 @@ def create_stok_table(cursor):
         EN REAL,
         BOY REAL,
         M2 REAL,
-        MM REAL
+        MM REAL,
+        CIKMA INTEGER DEFAULT 0  -- Adding CIKMA as a boolean (0 for False, 1 for True), default is 0 (False)
     )
     ''')
 
