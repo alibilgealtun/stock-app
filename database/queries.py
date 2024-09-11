@@ -271,7 +271,7 @@ def get_stock_paginated_filtered(db_path, page, page_size, only_depo=False, only
 
     # Modify the base query to include DELIK, M2, and KONUM
     base_query = """
-    SELECT OLIMPIA_KOD, STOK_ADI, MODEL, OZELLIK, ADET, DELIK, M2, KONUM 
+    SELECT OLIMPIA_KOD, STOK_ADI, MODEL, OZELLIK, ADET, DELIK, EN,BOY, KONUM 
     FROM STOK 
     WHERE 1=1
     """
