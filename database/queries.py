@@ -73,31 +73,43 @@ def add_product(db_path, data):
 def add_stock(db_path, data):
     connection = get_connection(db_path)
     cursor = connection.cursor()
+
+    # Convert CIKMA to integer if necessary
+    cikma_value = data.get('CIKMA')
+    if cikma_value == 'on':
+        cikma_value = 1
+    else:
+        cikma_value = int(cikma_value or 0)
+
     stok_sql = """
-    INSERT INTO STOK (OLIMPIA_KOD, STOK_ADI, UY, KONUM, MODEL, OZELLIK, DELIK, ADET, EN, BOY, M2, MM)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO STOK (OLIMPIA_KOD, STOK_ADI, UY, KONUM, MODEL, OZELLIK, DELIK, ADET, EN, BOY, M2, MM, CIKMA)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     stok_values = (
         str(data['OLIMPIA_KOD']), data['STOK_ADI'], data['UY'], data['KONUM'], data['MODEL'],
         data['OZELLIK'], data['DELIK'], data.get('ADET'),
-        data.get('EN'), data.get('BOY'), data.get('M2'), data.get('MM')
+        data.get('EN'), data.get('BOY'), data.get('M2'), data.get('MM'),
+        cikma_value
     )
     cursor.execute(stok_sql, stok_values)
     connection.commit()
     cursor.close()
     connection.close()
 
+
+
 def update_stock(db_path, olimpia_kod, data):
     connection = get_connection(db_path)
     cursor = connection.cursor()
 
-    # Remove `stokId` from data, as it's not a valid column in the STOK table
-    if 'stokId' in data:
-        del data['stokId']
-
-    # Filter out any invalid columns
-    valid_columns = {'STOK_ADI', 'UY', 'KONUM', 'MODEL', 'OZELLIK', 'DELIK', 'ADET', 'EN', 'BOY', 'M2', 'MM'}
+    valid_columns = {'STOK_ADI', 'UY', 'KONUM', 'MODEL', 'OZELLIK', 'DELIK', 'ADET', 'EN', 'BOY', 'M2', 'MM', 'CIKMA'}
     data = {k: v for k, v in data.items() if k in valid_columns}
+
+    if 'CIKMA' in data:
+        if data['CIKMA'] == 'on':
+            data['CIKMA'] = 1
+        else:
+            data['CIKMA'] = int(data['CIKMA'] or 0)
 
     update_fields = []
     update_values = []
@@ -122,6 +134,8 @@ def update_stock(db_path, olimpia_kod, data):
 
     cursor.close()
     connection.close()
+
+
 
 
 def delete_stock(db_path, olimpia_kod):
@@ -193,6 +207,7 @@ def add_color(db_path, new_color):
     cursor.close()
     connection.close()
 
+
 def add_purchase(db_path, data):
     fields = ', '.join(data.keys())
     placeholders = ', '.join(['?'] * len(data))
@@ -201,11 +216,17 @@ def add_purchase(db_path, data):
     connection = get_connection(db_path)
     cursor = connection.cursor()
 
-    try:
-        # Debugging: Print the SQL query and values
-        print(f"INSERT INTO alim_bilgisi ({fields}) VALUES ({placeholders})")
-        print(f"Values: {values}")
+    cursor.execute("SELECT ADET FROM STOK WHERE OLIMPIA_KOD = ?", (data['OLIMPIA_KOD'],))
+    current_stock = cursor.fetchone()
 
+    if current_stock is None:
+        current_stock = 0
+
+    new_adet = current_stock['ADET'] + int(data['ADET'])
+
+    cursor.execute("UPDATE STOK SET ADET = ? WHERE OLIMPIA_KOD = ?", (new_adet, data['OLIMPIA_KOD']))
+
+    try:
         cursor.execute(f"INSERT INTO alim_bilgisi ({fields}) VALUES ({placeholders})", values)
         connection.commit()
     except sqlite3.Error as e:
@@ -215,6 +236,7 @@ def add_purchase(db_path, data):
         cursor.close()
         connection.close()
 
+
 def add_sale(db_path, data):
     fields = ', '.join(data.keys())
     placeholders = ', '.join(['?'] * len(data))
@@ -222,21 +244,43 @@ def add_sale(db_path, data):
 
     connection = get_connection(db_path)
     cursor = connection.cursor()
+
+    cursor.execute("SELECT ADET FROM STOK WHERE OLIMPIA_KOD = ?", (data['OLIMPIA_KOD'],))
+    current_stock = cursor.fetchone()
+
+    if current_stock is None:
+        current_stock = 0
+
+    new_adet = current_stock['ADET'] - int(data['ADET'])
+
+    if new_adet < 0:
+        new_adet = 0
+
+    cursor.execute("UPDATE STOK SET ADET = ? WHERE OLIMPIA_KOD = ?", (new_adet, data['OLIMPIA_KOD']))
+
     cursor.execute(f"INSERT INTO satis_bilgisi ({fields}) VALUES ({placeholders})", values)
     connection.commit()
     cursor.close()
     connection.close()
 
 
-def get_stock_paginated_filtered(db_path, page, page_size, only_depo, search_query=''):
+def get_stock_paginated_filtered(db_path, page, page_size, only_depo=False, only_cikma=False, search_query=''):
     offset = (page - 1) * page_size
     connection = get_connection(db_path)
     cursor = connection.cursor()
 
-    base_query = "SELECT OLIMPIA_KOD, STOK_ADI, MODEL, OZELLIK, ADET FROM STOK WHERE 1=1"
+    # Modify the base query to include DELIK, M2, and KONUM
+    base_query = """
+    SELECT OLIMPIA_KOD, STOK_ADI, MODEL, OZELLIK, ADET, DELIK, M2, KONUM 
+    FROM STOK 
+    WHERE 1=1
+    """
 
     if only_depo:
         base_query += " AND ADET > 0"
+
+    if only_cikma:
+        base_query += " AND CIKMA = 1"
 
     if search_query:
         base_query += " AND (STOK_ADI LIKE ? OR MODEL LIKE ? OR OZELLIK LIKE ?)"
@@ -257,7 +301,6 @@ def get_stock_paginated_filtered(db_path, page, page_size, only_depo, search_que
         colors = get_colors_for_stock(db_path, stock['OLIMPIA_KOD'])
         stock_dict['colors_data'] = [{"renk_adi": c['renk_adi'], "fiyat": c['fiyat']} for c in colors]
         data.append(stock_dict)
-
     return data
 
 def search_across_all_data(db_path, query, limit=10, offset=0):
