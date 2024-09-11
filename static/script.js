@@ -2,12 +2,108 @@ $(document).ready(function () {
     initializeDatePicker();
     handlePageLoad();
     attachGlobalEventHandlers();
-    handlePaginationButtons();
+    //handlePaginationButtons();
     handleDepoFilterToggle();
+    attachScrollHandler();
+    triggerScrollEvent();
+    checkIfShouldLoadMore();
+    handleCikmaFilterToggle();
+
 });
+
+
 
 let currentPage = 1; // Track the current page
 let currentQuery = ''; // Track the current search query
+let isLoading = false; // Flag to prevent multiple triggers
+let hasMoreData = true; // Flag to indicate if more data is available
+
+function handleCikmaFilterToggle() {
+    $('#cikmaToggle').change(function () {
+        loadPage(1);
+    });
+}
+function triggerScrollEvent() {
+    $(window).trigger('scroll');
+}
+function checkIfShouldLoadMore() {
+    const scrollTop = $(window).scrollTop();
+    const windowHeight = $(window).height();
+    const documentHeight = $(document).height();
+
+    console.log(`ScrollTop: ${scrollTop}, WindowHeight: ${windowHeight}, DocumentHeight: ${documentHeight}`);
+
+    if (hasMoreData && !isLoading && scrollTop + windowHeight >= documentHeight - 200) {
+        loadNextPage();
+    }
+}
+
+function loadNextPage() {
+    if (!hasMoreData || isLoading) return;
+
+    isLoading = true; // Set loading flag to true
+
+    const depoFilterActive = $('#depoToggle').is(':checked');
+    const queryParam = currentQuery ? `&query=${encodeURIComponent(currentQuery)}` : '';
+    const nextPageUrl = `/get_stocks_paginated?page=${currentPage + 1}&only_depo=${depoFilterActive}${queryParam}`;
+
+    console.log(`Loading data from: ${nextPageUrl}`);
+
+    $.ajax({
+        url: nextPageUrl,
+        type: 'GET',
+        success: function (data) {
+            if (data && data.length > 0) {
+                displayPage(data, currentPage + 1, true);
+                currentPage++; // Increment the current page
+                checkIfShouldLoadMore(); // Check if we need to load more immediately after adding new content
+            } else {
+                console.log('No more data available');
+                hasMoreData = false; // No more data available
+            }
+            isLoading = false; // Reset loading flag
+        },
+        error: function (err) {
+            console.error('Error loading next page:', err);
+            isLoading = false; // Reset loading flag on error
+        }
+    });
+}
+
+function attachScrollHandler() {
+    $(window).on('scroll', function () {
+        const scrollTop = $(window).scrollTop();
+        const windowHeight = $(window).height();
+        const documentHeight = $(document).height();
+
+        console.log(`ScrollTop: ${scrollTop}, WindowHeight: ${windowHeight}, DocumentHeight: ${documentHeight}`);
+
+        if (hasMoreData && !isLoading && scrollTop + windowHeight >= documentHeight - 200) {
+            console.log('Near bottom, loading next page...');
+            loadNextPage();
+        }
+    });
+}function displayPage(data, page, append = false) {
+    if (!data || data.length === 0) {
+        console.log('No data to display.');
+        if (!append) {
+            $("#stokTable tbody").empty();
+            $("#stokTable tbody").append('<tr><td colspan="8">Başka stok bulunamadı.</td></tr>');
+        }
+        return;
+    }
+
+    if (!append) {
+        $("#stokTable tbody").empty();
+    }
+
+    data.forEach(function (stok) {
+        $("#stokTable tbody").append(generateTableRow(stok));
+    });
+
+    attachEventHandlers();
+    $("#currentPage").text(page);
+}
 function initializeDatePicker() {
     $.datepicker.regional['tr'] = {
         closeText: 'Kapat',
@@ -81,29 +177,30 @@ function handlePaginationButtons() {
     });
 }
 
-
-
-
-function displayPage(data, page) {
-    const itemsPerPage = 10;
-    const start = (page - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-
+/*
+function displayPage(data, page, append = false) {
     if (!data || data.length === 0) {
         console.log('No data to display.');
-        $("#stokTable tbody").empty();
-        $("#stokTable tbody").append('<tr><td colspan="8">Başka stok bulunamadı.</td></tr>');
+        if (!append) {
+            $("#stokTable tbody").empty();
+            $("#stokTable tbody").append('<tr><td colspan="8">Başka stok bulunamadı.</td></tr>');
+        }
         return;
     }
 
-    $("#stokTable tbody").empty();
+    if (!append) {
+        $("#stokTable tbody").empty();
+    }
+
     data.forEach(function (stok) {
         $("#stokTable tbody").append(generateTableRow(stok));
     });
 
     attachEventHandlers();
     $("#currentPage").text(page);
-}
+}*/
+
+
 function generateTableRow(stok) {
     let renkFiyatListesiHtml = '';
     if (Array.isArray(stok.colors_data)) {
@@ -124,6 +221,9 @@ function generateTableRow(stok) {
         <td>${stok.STOK_ADI || ''}</td>
         <td>${stok.MODEL || ''}</td>
         <td>${stok.OZELLIK || ''}</td>
+        <td>${stok.DELIK || ''}</td>
+        <td>${stok.M2 || ''}</td>
+        <td>${stok.KONUM || ''}</td>
         <td>${stok.ADET || ''}</td>
         <td>${renkFiyatListesiHtml}</td>
         <td>
@@ -291,6 +391,7 @@ function editStock(stokId) {
 function displayEditForm(data, stokId) {
     $('#editForm').show();
     const formContent = $('#editFormContent').empty();
+    formContent.append(`<h2 style="font-size:20px; text-align:center;">OLIMPIA KOD: ${stokId}</h2> `);
     formContent.append(`<input type="hidden" id="stokId" name="stokId" value="${stokId}">`);
 
     Object.keys(data.stock).forEach(function (key) {
@@ -298,17 +399,28 @@ function displayEditForm(data, stokId) {
             formContent.append(generateInputField(key, data.stock[key]));
         }
     });
+    $('#CIKMA_EDIT').prop('checked', data.stock.CIKMA == 1);
 
     displayDetails(data.purchases, 'purchaseList', 'purchaseDetails');
     displayDetails(data.sales, 'saleList', 'saleDetails');
 }
 
 function generateInputField(key, value) {
+    if (key === 'CIKMA') {
+        return `<div class="form-field ">
+            <label for="${key}">ÇIKMA</label>
+            <label class="switch">
+                <input type="checkbox" id="${key}_EDIT" name="${key}">
+                <span class="slider round"></span>
+            </label>
+        </div>`;
+    }
     return `<div class="form-field">
         <label for="${key}">${key}</label>
         <input type="text" id="${key}" name="${key}" value="${value || ''}">
     </div>`;
 }
+
 
 function displayDetails(details, listId, detailsId) {
     const list = $(`#${listId}`).empty();
@@ -337,10 +449,11 @@ function getPageFromUrl() {
 
 function loadPage(page) {
     const depoFilterActive = $('#depoToggle').is(':checked');
+    const cikmaFilterActive = $('#cikmaToggle').is(':checked');
     const queryParam = currentQuery ? `&query=${encodeURIComponent(currentQuery)}` : '';
 
     $.ajax({
-        url: `/get_stocks_paginated?page=${page}&only_depo=${depoFilterActive}${queryParam}`,
+        url: `/get_stocks_paginated?page=${page}&only_depo=${depoFilterActive}&only_cikma=${cikmaFilterActive}${queryParam}`,
         type: 'GET',
         cache: false,
         success: function (data) {
@@ -577,12 +690,14 @@ function calculateSaleDiscount(event) {
 // The following functions are kept as is to match the HTML:
 function openAddForm() {
     $('#addStockForm').show();
-    $('#addStockContent').empty(); // Clear previous form content
+    $('#addStockContent').empty();
 
     $('#addStockContent').append(`
         <div class="form-field">
             <label for="OLIMPIA_KOD">OLIMPIA KOD <span style="color:red;">*</span></label>
             <input type="text" id="OLIMPIA_KOD" name="OLIMPIA_KOD" required>
+            <button type="button" onclick="searchStock()">OTOMATİK DOLDUR</button>
+
         </div>
         <div class="form-field">
             <label for="STOK_ADI">STOK ADI <span style="color:red;">*</span></label>
@@ -604,6 +719,7 @@ function openAddForm() {
             <label for="OZELLIK">ÖZELLİK</label>
             <input type="text" id="OZELLIK" name="OZELLIK">
         </div>
+        
         <div class="form-field">
             <label for="DELIK">DELİK</label>
             <input type="text" id="DELIK" name="DELIK">
@@ -612,6 +728,14 @@ function openAddForm() {
             <label for="MM">MM</label>
             <input type="text" id="MM" name="MM">
         </div>
+        <div class="form-field">
+                <label for="CIKMA">CIKMA</label>
+                <label class="switch">
+                    <input type="checkbox" id="CIKMA" name="CIKMA">
+                    <span class="slider round"></span>
+                </label>
+        </div>
+
         <div class="form-field">
             <label for="M2">EBAT</label>
             <input type="text" id="M2" name="M2">
@@ -648,8 +772,10 @@ function addStock() {
         EN: $('#EN').val(),
         BOY: $('#BOY').val(),
         M2: $('#M2').val(),
-        MM: $('#MM').val()
+        MM: $('#MM').val(),
+        CIKMA: $('#CIKMA').is(':checked') ? 1 : 0
     };
+
 
     $.ajax({
         url: '/add_stock',
@@ -742,6 +868,70 @@ function addNewColor() {
         error: function(err) {
             console.error('Error adding new color:', err);
             alert('Renk eklerken bir hata oluştu.');
+        }
+    });
+}
+
+function searchStock() {
+    // used for searching inside of stock adding part
+    const olimpiaKod = document.getElementById('OLIMPIA_KOD').value;
+
+    if (olimpiaKod.trim() === '') {
+        alert('Please enter an Olimpia Kod');
+        return;
+    }
+
+    $.ajax({
+        url: '/search_stock',
+        method: 'GET',
+        data: { olimpia_kod: olimpiaKod },
+        success: function (response) {
+            // Populate the form fields with the stock data
+            if (response) {
+                document.getElementById('addStockContent').elements['OLIMPIA_KOD'].value = response.OLIMPIA_KOD;
+                document.getElementById('addStockContent').elements['STOK_ADI'].value = response.STOK_ADI;
+                document.getElementById('addStockContent').elements['UY'].value = response.UY;
+                document.getElementById('addStockContent').elements['KONUM'].value = response.KONUM;
+                document.getElementById('addStockContent').elements['MODEL'].value = response.MODEL;
+                document.getElementById('addStockContent').elements['OZELLIK'].value = response.OZELLIK;
+                document.getElementById('addStockContent').elements['DELIK'].value = response.DELIK;
+                document.getElementById('addStockContent').elements['MM'].value = response.MM;
+                document.getElementById('addStockContent').elements['M2'].value = response.M2;
+                document.getElementById('addStockContent').elements['RENK'].value = response.RENK;
+                //document.getElementById('addStockContent').elements['ISKONTO'].value = response.ISKONTO;
+            }
+
+        },
+        error: function () {
+            alert('Stock not found or there was an error with the request.');
+        }
+    });
+}
+function submitForm() {
+    const stokId = $('#stokId').val(); // Get the hidden stokId field value
+
+    // Serialize the form data as an array of name-value pairs
+    const formDataArray = $('#editFormContent').serializeArray();
+
+    // Manually set the CIKMA value
+    const cikmaValue = $('#CIKMA_EDIT').is(':checked') ? 1 : 0;
+    formDataArray.push({ name: 'CIKMA', value: cikmaValue });
+
+    // Convert the array to a query string format
+    const formData = $.param(formDataArray);
+
+    $.ajax({
+        url: `/update_stock/${stokId}`,
+        type: 'PUT',
+        data: formData,
+        success: function (response) {
+            alert(response.message || 'Stock updated successfully.');
+            $('#editForm').hide(); // Close the modal after submission
+            window.location.reload(); // Reload the page to reflect the updates
+        },
+        error: function (err) {
+            console.error('Error updating stock:', err);
+            alert(`Error updating stock: ${err.responseText || 'Unknown error occurred'}`);
         }
     });
 }
