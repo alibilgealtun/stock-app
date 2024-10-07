@@ -53,7 +53,7 @@ def create_alim_bilgisi_table(cursor):
         ID INTEGER PRIMARY KEY AUTOINCREMENT,
         OLIMPIA_KOD TEXT,
         ALIM_TARIHI TEXT,
-        ADET INTEGER,
+        ADET INTEGER DEFAULT 0,
         FIYAT REAL,
         renk_adi TEXT,
         FOREIGN KEY (OLIMPIA_KOD) REFERENCES STOK(OLIMPIA_KOD)

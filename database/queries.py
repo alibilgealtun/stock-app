@@ -218,11 +218,12 @@ def add_purchase(db_path, data):
 
     cursor.execute("SELECT ADET FROM STOK WHERE OLIMPIA_KOD = ?", (data['OLIMPIA_KOD'],))
     current_stock = cursor.fetchone()
-
     if current_stock is None:
-        current_stock = 0
+        current_stock_adet = 0
+    else:
+        current_stock_adet = current_stock['ADET'] if current_stock['ADET'] is not None else 0
 
-    new_adet = current_stock['ADET'] + int(data['ADET'])
+    new_adet = current_stock_adet + int(data['ADET'])
 
     cursor.execute("UPDATE STOK SET ADET = ? WHERE OLIMPIA_KOD = ?", (new_adet, data['OLIMPIA_KOD']))
 
